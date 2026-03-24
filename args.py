@@ -7,8 +7,6 @@ def get_parser():
                         help='if true, set amsgrad to True in an Adam or AdamW optimizer.')
     parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--bert_tokenizer', default='bert-base-uncased', help='BERT tokenizer')
-    parser.add_argument('--ck_bert', default='/home/icclab/Documents/lqw/Referring_Segmentation/rrsis/checkpoints/', \
-                        help='pre-trained BERT weights')
     parser.add_argument('--dataset', default='rrsisd', help='refcoco, refcoco+, or refcocog')
     parser.add_argument('--ddp_trained_weights', action='store_true',
                         help='Only needs specified when testing,'
@@ -24,14 +22,10 @@ def get_parser():
                                                   'stage-2, stage-3, and stage-4 PWAMs')
     parser.add_argument('--model', default='lavt_one', help='model: lavt, lavt_one')
     parser.add_argument('--model_id', default='RMSIN', help='name to identify the model')
-    parser.add_argument('--output-dir', default='/home/icclab/Documents/lqw/Referring_Segmentation/RMSIN/checkpoints', help='path where to save checkpoint weights')
+
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')
-    parser.add_argument('--pretrained_swin_weights', default='/home/icclab/Documents/lqw/Multimodal_Segmentation/Mask2FormerRS/weights/swin_base_patch4_window12_384_22k.pth',
-                        help='path to pre-trained Swin backbone weights')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--split', default='test', help='only used when testing')
     parser.add_argument('--splitBy', default='unc', help='change to umd or google when the datasset is G-Ref (RefCOCOg)')
     parser.add_argument('--swin_type', default='base',
@@ -43,8 +37,16 @@ def get_parser():
                              'when training, window size is inferred from pre-trained weights file name'
                              '(containing \'window12\'). Initialize Swin with window size 12 instead of the default 7.')
     parser.add_argument('-j', '--workers', default=8, type=int, metavar='N', help='number of data loading workers')
+    
+    # paths to pre-trained weights and dataset root directory
+    parser.add_argument('--ck_bert', default='./pretrained_weights/bert-base-uncased/', \
+                    help='pre-trained BERT weights')
+    parser.add_argument('--pretrained_swin_weights', default='./pretrained_weights/swin/swin_base_patch4_window12_384_22k.pth',
+                        help='path to pre-trained Swin backbone weights')
+    parser.add_argument('--output-dir', default='./checkpoints', help='path where to save checkpoint weights')
+    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
     return parser
-
 
 if __name__ == "__main__":
     parser = get_parser()

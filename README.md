@@ -1,40 +1,60 @@
-# RMSIN
-This repository is the offical implementation for ["Rotated Multi-Scale Interaction Network for Referring Remote Sensing Image Segmentation."](https://arxiv.org/abs/2312.12470)
-![Pipeline Image](pipeline.jpg)
+# Referring segmentation framework
+
+
+## Summary
+| Code     |Backbone  | Paper |  Journal |  Year | 
+| ----------- | ----------- | ----------- |----------- |----------- |
+| [LAVT](https://github.com/yz93/LAVT-RIS)     | Swin+Bert | [LAVT: Language-Aware Vision Transformer for Referring Image Segmentation](https://openaccess.thecvf.com/content/CVPR2022/html/Yang_LAVT_Language-Aware_Vision_Transformer_for_Referring_Image_Segmentation_CVPR_2022_paper.html)       | CVPR       | 2022       | 
+| [RMSIN](https://github.com/Lsan2401/RMSIN)     | Swin+Bert | [Rotated Multi-Scale Interaction Network for Referring Remote Sensing Image Segmentation](https://ieeexplore.ieee.org/document/10657655/)       | CVPR       | 2024       | 
+
+This repository provides the a collection of implementations for refering segmentation. I hopt it could be a good start for this task. 
+
+The original rely on mmcv and mmsegmentation. I found they are unnecessary, so I remove all of them and keep this version simple. I hope this version of the code will work in the latest python and pytorch environment.
+
+I ran the code to make sure the model achieve the little difference results comparing to original resutls.
+
+
+## Files
+Code in this repository is written using [PyTorch](https://pytorch.org/) and is organized in the following way (assuming the working directory is the root directory of this repository):
+* `./lib` contains files implementing the main network.
+* Inside `./lib`, `_utils.py` defines the highest-level model, which incorporates the backbone network
+defined in `backbone.py` and the simple mask decoder defined in `mask_predictor.py`.
+`segmentation.py` provides the model interface and initialization functions.
+* `./bert` contains files migrated from [Hugging Face Transformers v3.0.2](https://huggingface.co/transformers/v3.0.2/quicktour.html),
+which implement the BERT language model.
+We used Transformers v3.0.2 during development but it had a bug that would appear when using `DistributedDataParallel`.
+Therefore we maintain a copy of the relevant source files in this repository.
+This way, the bug is fixed and code in this repository is self-contained.
+* `./train.py` is invoked to train the model.
+* `./test.py` is invoked to run inference on the evaluation subsets after training.
+* `./refer` contains data pre-processing code and is also where data should be placed, including the images and all annotations.
+It is cloned from [refer](https://github.com/lichengunc/refer). 
+* `./data/dataset_refer_bert.py` is where the dataset class is defined.
+* `./utils.py` defines functions that track training statistics and setup
+functions for `DistributedDataParallel`.
+
 
 ## Setting Up
-### Preliminaries
-The code has been verified to work with PyTorch v1.7.1 and Python 3.7.
-1. Clone this repository.
-2. Change directory to root of this repository.
-### Package Dependencies
-1. Create a new Conda environment with Python 3.7 then activate it:
-```shell
-conda create -n RMSIN python==3.7
-conda activate RMSIN
-```
 
-2. Install PyTorch v1.7.1 with a CUDA version that works on your cluster/machine (CUDA 10.2 is used in this example):
-```shell
-conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.2 -c pytorch
-```
 
-3. Install the packages in `requirements.txt` via `pip`:
-```shell
-pip install -r requirements.txt
-```
-### The Initialization Weights for Training
-1. Create the `./pretrained_weights` directory where we will be storing the weights.
-```shell
-mkdir ./pretrained_weights
-```
-2. Download [pre-trained classification weights of
-the Swin Transformer](https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window12_384_22k.pth),
-and put the `pth` file in `./pretrained_weights`.
-These weights are needed for training to initialize the model.
+Weights are needed for training to initialize the model.
+
+1. Download pre-trained classification weights of the [ Swin Transformer](https://github.com/microsoft/Swin-Transformer), i.e. [swin_base_patch4_window12_384_22k](https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window12_384_22k.pth)
+and put the `pth` file in `./swin`.
+2. Download [bert weights](https://huggingface.co/google-bert/bert-base-uncased/tree/main),**config.json, pytorch_model.bin, tokenizer_config.json, vocab.txt** 
+and put these files in `./bert-base-uncased`.
+
+Path are needed for datasets load and weights save. In the args.py file, revise the following path:
+1. ck_bert: bert weights
+2. pretrained_swin_weights: swin transformer weights
+3. refer_data_root: dataset path
+4. output-dir: output weights path
+5. resume: resume weights path
+
 
 ## Datasets
-We perform all experiments on our proposed dataset RRSIS-D. RRSIS-D is a new Referring Remote Sensing Image Segmentation benchmark which containes 17,402 image-caption-mask triplets.  It can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1Xqi3Am2Vgm4a5tHqiV9tfaqKNovcuK3A?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1yZatV2w_bSXIP9QBv2lCrA?pwd=sjoe) (access code: sjoe).
+- RRSIS-D: It can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1Xqi3Am2Vgm4a5tHqiV9tfaqKNovcuK3A?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1yZatV2w_bSXIP9QBv2lCrA?pwd=sjoe) (access code: sjoe).
+
 ### Usage
 1. Download our dataset.
 2. Copy all the downloaded files to `./refer/data/`. The dataset folder should be like this:
@@ -62,4 +82,4 @@ python test.py --swin_type base --dataset rrsisd --resume ./your_checkpoints_pat
 ```
 
 ## Acknowledgements
-Code in this repository is built on [LAVT](https://github.com/yz93/LAVT-RIS). We'd like to thank the authors for open sourcing their project.
+The code mainly is built on [LAVT](https://github.com/yz93/LAVT-RIS) and [RMSIN](https://github.com/Lsan2401/RMSIN). We'd like to thank the authors for open sourcing their project.
