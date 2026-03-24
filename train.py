@@ -1,7 +1,6 @@
 import os
 os.environ['WANDB_API_KEY'] = 'd14367a70fe99f6d07256b084fcc49cf17bb01f4'
 
-import datetime
 import time
 import torch
 import torch.utils.data
@@ -9,15 +8,18 @@ import wandb
 import cv2
 import random
 import transforms as T
-import utils
 import numpy as np
+import logging
 import gc
 import operator
 from functools import reduce
 from bert.modeling_bert import BertModel
 from lib import segmentation
-from loss.loss import Loss
-import logging
+from utils.loss import Loss
+from utils import utils
+import shutil
+from datetime import datetime
+from args import get_parser
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
 
@@ -344,16 +346,22 @@ def main(args):
 
 
 if __name__ == "__main__":
-    from args import get_parser
     seed_everything()
     parser = get_parser()
     args = parser.parse_args()
     if args.local_rank == 0:
-        wandb.init(project="rmsin_2080")
+        wandb.init(project=args.model_id)
+
+    # create rundir and copy config file
+    run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model_id
+    args.output_dir = os.path.join(args.output_dir, str(run_id))
+    os.makedirs(args.output_dir, exist_ok=True)
+    shutil.copy(args.config, args.output_dir)   # copy config file to rundir
+
     # set up distributed learning
     utils.init_distributed_mode(args)
     print('Image size: {}'.format(str(args.img_size)))
     main(args)
 
 
-# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --batch-size 8 --lr 0.00005 --wd 1e-2 --swin_type base --img_size 480 2>&1 | tee /home/icclab/Documents/lqw/Referring_Segmentation/RMSIN/checkpoints
+# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --batch-size 8 --lr 0.00005 --wd 1e-2 --swin_type base --img_size 480 

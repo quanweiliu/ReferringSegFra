@@ -31,6 +31,8 @@ This way, the bug is fixed and code in this repository is self-contained.
 It is cloned from [refer](https://github.com/lichengunc/refer). 
 * `./data/dataset_refer_bert.py` is where the dataset class is defined.
 * `./utils.py` defines functions that track training statistics and setup
+* `./loss.py` defines loss functions
+
 functions for `DistributedDataParallel`.
 
 
@@ -73,7 +75,9 @@ $DATA_PATH
 ## Training
 We use DistributedDataParallel from PyTorch for training. To run on 4 GPUs (with IDs 0, 1, 2, and 3) on a single node:
 ```shell
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node 4 --master_port 12345 train.py --dataset rrsisd --model_id RMSIN --epochs 40 --img_size 480 2>&1 | tee ./output
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --dataset rrsisd --model_id RMSIN --epochs 40 --img_size 480 
+
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py
 ```
 
 ## Testing

@@ -337,7 +337,6 @@ class PatchEmbed(nn.Module):
         return x
 
 
-
 class NestedTensor(object):
     def __init__(self, tensors, mask: Optional[Tensor]):
         self.tensors = tensors
@@ -432,7 +431,7 @@ class MultiModalSwinTransformer(nn.Module):
         self.patch_norm = patch_norm
         self.out_indices = out_indices
         self.frozen_stages = frozen_stages
-       
+
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
@@ -676,7 +675,6 @@ class MMBasicLayer(nn.Module):
                 x = blk(x, attn_mask)  # output of a Block has shape (B, H*W, dim)
 
         v_residual = self.visual_residual(x)
-
         # PWAM fusion
         x_residual = self.fusion(x, l, l_mask)
         # apply a gate on the residual
@@ -726,8 +724,6 @@ class PWAM(nn.Module):
         mm = mm.permute(0, 2, 1)  # (B, H*W, dim)
 
         return mm
-
-
 
 
 class SpatialImageLanguageAttention(nn.Module):
