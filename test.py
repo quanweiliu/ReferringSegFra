@@ -1,14 +1,13 @@
 import torch
 import torch.utils.data
-import utils
+import logging
 import numpy as np
-import transforms as T
 import random
 from bert.modeling_bert import BertModel
 from lib import segmentation
-
-
-
+from utils import utils
+from utils import transforms as T
+from args import get_parser
 
 def get_dataset(image_set, transform, args):
     from data.dataset_refer_bert import ReferDataset
@@ -22,7 +21,7 @@ def get_dataset(image_set, transform, args):
     return ds, num_classes
 
 
-def evaluate(model, data_loader, bert_model, device):
+def evaluate(model, data_loader, bert_model, device, logger):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
 
@@ -36,7 +35,7 @@ def evaluate(model, data_loader, bert_model, device):
 
     with torch.no_grad():
 
-        for data in metric_logger.log_every(data_loader, 100, header):
+        for data in metric_logger.log_every(data_loader, 100, header, logger):
             image, target, sentences, attentions = data
             image, target, sentences, attentions = image.to(device), target.to(device), \
                                                    sentences.to(device), attentions.to(device)
@@ -86,8 +85,6 @@ def evaluate(model, data_loader, bert_model, device):
     print(results_str)
 
 
-
-
 def get_transform(args):
     transforms = [T.Resize(args.img_size, args.img_size),
                   T.ToTensor(),
@@ -114,6 +111,7 @@ def main(args):
     print(args.model)
     single_model = segmentation.__dict__[args.model](pretrained='',args=args)
     checkpoint = torch.load(args.resume, map_location='cpu')
+    print("checkpoint", checkpoint.keys())
     single_model.load_state_dict(checkpoint['model'], strict=False)
     model = single_model.to(device)
 
@@ -128,12 +126,19 @@ def main(args):
     else:
         bert_model = None
 
-    evaluate(model, data_loader_test, bert_model, device=device)
+    evaluate(model, data_loader_test, bert_model, device=device, logger=logging.getLogger("test"))
 
 
 if __name__ == "__main__":
-    from args import get_parser
     parser = get_parser()
     args = parser.parse_args()
+
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/model_best_RMSIN.pth'
     print('Image size: {}'.format(str(args.img_size)))
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
     main(args)
+
+
+
+# python test.py --swin_type base --dataset rrsisd --resume /home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/model_best_RMSIN.pth --split val --workers 4 --window12 --img_size 480

@@ -11,9 +11,9 @@ import errno
 import os
 
 import sys
-import logging
+# import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
 
 
 class SmoothedValue(object):
@@ -125,7 +125,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None):
+    def log_every(self, iterable, print_freq, header=None, logger=None):
         print(iterable)
         i = 0
         if not header:
@@ -152,17 +152,20 @@ class MetricLogger(object):
             if i % print_freq == 0:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
-                # print(log_msg.format(
-                #     i, len(iterable), eta=eta_string,
-                #     meters=str(self),
-                #     time=str(iter_time), data=str(data_time),
-                #     memory=torch.cuda.max_memory_allocated() / MB))
-                logging.info(log_msg.format(
-                    i, len(iterable), eta=eta_string,
-                    meters=str(self),
-                    time=str(iter_time), data=str(data_time),
-                    memory=torch.cuda.max_memory_allocated() / MB))
-                sys.stdout.flush()
+
+                if logger is not None:
+                    logger.info(log_msg.format(
+                        i, len(iterable), eta=eta_string,
+                        meters=str(self),
+                        time=str(iter_time), data=str(data_time),
+                        memory=torch.cuda.max_memory_allocated() / MB))
+                else:
+                    print(log_msg.format(
+                        i, len(iterable), eta=eta_string,
+                        meters=str(self),
+                        time=str(iter_time), data=str(data_time),
+                        memory=torch.cuda.max_memory_allocated() / MB)) 
+                    sys.stdout.flush()
 
             i += 1
             end = time.time()

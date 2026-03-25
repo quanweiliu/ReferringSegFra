@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from collections import OrderedDict
-from arc import AdaptiveRotatedConv2d, RountingFunction
+from .arc import AdaptiveRotatedConv2d, RountingFunction
 
 
 class SimpleDecoding(nn.Module):

@@ -2,14 +2,15 @@ import os
 os.environ['WANDB_API_KEY'] = 'd14367a70fe99f6d07256b084fcc49cf17bb01f4'
 
 import time
+import datetime
 import torch
 import torch.utils.data
+import json
 import wandb
 import cv2
 import random
-import transforms as T
-import numpy as np
 import logging
+import numpy as np
 import gc
 import operator
 from functools import reduce
@@ -17,11 +18,8 @@ from bert.modeling_bert import BertModel
 from lib import segmentation
 from utils.loss import Loss
 from utils import utils
-import shutil
-from datetime import datetime
+from utils import transforms as T
 from args import get_parser
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
 
 
 def seed_everything(seed=2401):
@@ -73,7 +71,7 @@ def criterion(input, target, weight=0.1):
     return Loss(weight=weight)(input, target)
 
 
-def evaluate(model, data_loader, bert_model, epoch):
+def evaluate(model, data_loader, bert_model, epoch, logger):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test: "
@@ -89,7 +87,7 @@ def evaluate(model, data_loader, bert_model, epoch):
     total_loss = 0
 
     with torch.no_grad():
-        for data in metric_logger.log_every(data_loader, 100, header):
+        for data in metric_logger.log_every(data_loader, 100, header, logger):
             total_its += 1
             image, target, sentences, attentions = data
             pixels = cv2.countNonZero(target.data.numpy()[0]) / 230400.
@@ -132,7 +130,7 @@ def evaluate(model, data_loader, bert_model, epoch):
         results_str += '    precision@%s = %.2f\n' % \
                        (str(eval_seg_iou_list[n_eval_iou]), seg_correct[n_eval_iou] * 100. / seg_total)
     results_str += '    overall IoU = %.2f\n' % (cum_I * 100. / cum_U)
-    print(results_str)
+    # print(results_str)
 
     if args.local_rank == 0:
         wandb.log({
@@ -140,12 +138,12 @@ def evaluate(model, data_loader, bert_model, epoch):
             "val oiou": cum_I * 100. / cum_U,
             "val Loss": total_loss / total_its})
 
-    logging.info(results_str)
+    logger.info(results_str)
     return 100 * iou, 100 * cum_I / cum_U
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, print_freq,
-                    iterations, bert_model):
+                    iterations, bert_model, logger):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
@@ -154,7 +152,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
     total_its = 0
 
     # for data in data_loader:
-    for i, data in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for i, data in enumerate(metric_logger.log_every(data_loader, print_freq, header, logger)):
         total_its += 1
         image, target, sentences, attentions = data
         image, target, sentences, attentions = image.cuda(non_blocking=True),\
@@ -315,8 +313,8 @@ def main(args):
     for epoch in range(max(0, resume_epoch+1), args.epochs):
         data_loader.sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, args.print_freq,
-                        iterations, bert_model)
-        iou, overallIoU = evaluate(model, data_loader_test, bert_model, epoch)
+                        iterations, bert_model, logging.getLogger("train"))
+        iou, overallIoU = evaluate(model, data_loader_test, bert_model, epoch, logging.getLogger("val"))
         print('Average object IoU {}'.format(iou))
         print('Overall IoU {}'.format(overallIoU))
         best = (best_oIoU < overallIoU)
@@ -352,11 +350,28 @@ if __name__ == "__main__":
     if args.local_rank == 0:
         wandb.init(project=args.model_id)
 
-    # create rundir and copy config file
+    # create rundir and copy args file
     run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model_id
     args.output_dir = os.path.join(args.output_dir, str(run_id))
-    os.makedirs(args.output_dir, exist_ok=True)
-    shutil.copy(args.config, args.output_dir)   # copy config file to rundir
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
+    with open(args.output_dir + '/args.json', 'w') as fid:
+        json.dump(args.__dict__, fid, indent=2)
+    
+    logging.basicConfig(level=logging.INFO, \
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \
+                        datefmt="%Y-%m-%d %H:%M:%S", \
+                        handlers=[
+                            logging.FileHandler(os.path.join(args.output_dir, "ref_seg.log"), mode="a"),  # 用于文件保存
+                            logging.StreamHandler()   #用于文件打印
+                        ],
+                        )
+    # logging.basicConfig(level=logging.INFO, \
+    #                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", 
+    #                     datefmt="%Y-%m-%d %H:%M:%S", 
+    #                     filename=os.path.join(args.output_dir, "ref_seg.log"), 
+    #                     filemode="a")
+    # logger = logging.getLogger()
 
     # set up distributed learning
     utils.init_distributed_mode(args)
@@ -364,4 +379,4 @@ if __name__ == "__main__":
     main(args)
 
 
-# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --batch-size 8 --lr 0.00005 --wd 1e-2 --swin_type base --img_size 480 
+# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --img_size 480 

@@ -2,7 +2,7 @@ import argparse
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='RMSIN training and testing')
+    parser = argparse.ArgumentParser(description='referring expression segmentation training and testing')
     parser.add_argument('--amsgrad', action='store_true',
                         help='if true, set amsgrad to True in an Adam or AdamW optimizer.')
     parser.add_argument('-b', '--batch-size', default=8, type=int)
@@ -22,7 +22,7 @@ def get_parser():
                                                   'stage-2, stage-3, and stage-4 PWAMs')
     parser.add_argument('--model', default='lavt_one', help='model: lavt, lavt_one')
     parser.add_argument('--model_id', default='RMSIN', \
-                        choice=['LAVT', 'RMSIN'], \
+                        choices=['LAVT', 'RMSIN'], \
                         help='name to identify the model')
 
     parser.add_argument('--pin_mem', action='store_true',
