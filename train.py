@@ -4,22 +4,21 @@ os.environ['WANDB_API_KEY'] = 'd14367a70fe99f6d07256b084fcc49cf17bb01f4'
 import time
 import datetime
 import torch
-import torch.utils.data
+from torch import nn
+from torch.utils import data
 from torch.optim.lr_scheduler import LambdaLR
 import json
 import wandb
-import cv2
 import logging
-import numpy as np
 import gc
 import operator
 from functools import reduce
 from bert.modeling_bert import BertModel
 from lib import segmentation
-from data.dataset_refer_bert import ReferDataset
+from dataset.dataset_refer_bert import ReferDataset
 from utils.loss import MixLoss
-from utils import utils
-from utils import transforms as T
+from utils import tools, evaluation
+from utils import transforms
 from args import get_parser
 
 
@@ -34,87 +33,16 @@ def get_dataset(image_set, transform, args):
     return ds, num_classes
 
 
-def evaluate(model, data_loader, bert_model, criterion, logger):
-    model.eval()
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    header = "Test: "
-    total_its = 0
-    acc_ious = 0
-
-    # evaluation variables
-    cum_I, cum_U = 0, 0
-    eval_seg_iou_list = [.5, .6, .7, .8, .9]
-    seg_correct = np.zeros(len(eval_seg_iou_list), dtype=np.int32)
-    seg_total = 0
-    mean_IoU = []
-    total_loss = 0
-
-    with torch.no_grad():
-        for data in metric_logger.log_every(data_loader, 100, header, logger):
-            total_its += 1
-            image, target, sentences, attentions = data
-            pixels = cv2.countNonZero(target.data.numpy()[0]) / 230400.
-            image, target, sentences, attentions = image.cuda(non_blocking=True),\
-                                                   target.cuda(non_blocking=True),\
-                                                   sentences.cuda(non_blocking=True),\
-                                                   attentions.cuda(non_blocking=True)
-
-            sentences = sentences.squeeze(1)
-            attentions = attentions.squeeze(1)
-
-            if bert_model is not None:
-                last_hidden_states = bert_model(sentences, attention_mask=attentions)[0]
-                embedding = last_hidden_states.permute(0, 2, 1)  # (B, 768, N_l) to make Conv1d happy
-                attentions = attentions.unsqueeze(dim=-1)  # (B, N_l, 1)
-                output = model(image, embedding, l_mask=attentions)
-            else:
-                output = model(image, sentences, l_mask=attentions)
-
-            iou, I, U = utils.IoU(output, target)
-            loss = criterion(output, target)
-            total_loss += loss.item()
-            acc_ious += iou
-            mean_IoU.append(iou)
-            cum_I += I
-            cum_U += U
-            for n_eval_iou in range(len(eval_seg_iou_list)):
-                eval_seg_iou = eval_seg_iou_list[n_eval_iou]
-                seg_correct[n_eval_iou] += (iou >= eval_seg_iou)
-            seg_total += 1
-        iou = acc_ious / total_its
-
-    mean_IoU = np.array(mean_IoU)
-    mIoU = np.mean(mean_IoU)
-    print('Final results:')
-    print('Mean IoU is %.2f\n' % (mIoU * 100.))
-    results_str = ''
-    for n_eval_iou in range(len(eval_seg_iou_list)):
-        results_str += '    precision@%s = %.2f\n' % \
-                       (str(eval_seg_iou_list[n_eval_iou]), seg_correct[n_eval_iou] * 100. / seg_total)
-    results_str += '    overall IoU = %.2f\n' % (cum_I * 100. / cum_U)
-    # print(results_str)
-
-    if args.local_rank == 0:
-        wandb.log({
-            "val mIoU": mIoU,
-            "val oiou": cum_I * 100. / cum_U,
-            "val Loss": total_loss / total_its})
-
-    logger.info(results_str)
-    return 100 * iou, 100 * cum_I / cum_U
-
-
 def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, print_freq,
-                    iterations, bert_model, logger):
+                    iterations, bert_model, metric_format, logger):
     model.train()
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
+    metric_format.add_meter('lr', tools.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
     train_loss = 0
     total_its = 0
 
     # for data in data_loader:
-    for i, data in enumerate(metric_logger.log_every(data_loader, print_freq, header, logger)):
+    for i, data in enumerate(metric_format.log_every(data_loader, print_freq, header, logger)):
         total_its += 1
         image, target, sentences, attentions = data
         image, target, sentences, attentions = image.cuda(non_blocking=True),\
@@ -143,7 +71,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
         torch.cuda.synchronize()
         train_loss += loss.item()
         iterations += 1
-        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
+        metric_format.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
         del image, target, sentences, attentions, loss, output, data
         if bert_model is not None:
@@ -159,36 +87,38 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
 
 def main(args):
     dataset, num_classes = get_dataset("train",
-                                       utils.get_transform(args=args),
+                                       transforms.get_transform(args=args),
                                        args=args)
 
     dataset_test, _ = get_dataset("val",
-                                  utils.get_transform(args=args),
+                                  transforms.get_transform(args=args),
                                   args=args)
 
     # batch sampler
-    print(f"local rank {args.local_rank} / global rank {utils.get_rank()} successfully built train dataset.")
-    num_tasks = utils.get_world_size()
-    global_rank = utils.get_rank()
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset, num_replicas=num_tasks, rank=global_rank,
+    print(f"local rank {args.local_rank} / global rank {tools.get_rank()} successfully built train dataset.")
+    num_tasks = tools.get_world_size()
+    global_rank = tools.get_rank()
+    train_sampler = data.distributed.DistributedSampler(dataset, num_replicas=num_tasks, rank=global_rank,
                                                                     shuffle=True)
-    test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+    test_sampler = data.SequentialSampler(dataset_test)
 
     # data loader
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=args.pin_mem, drop_last=True)
+    data_loader = data.DataLoader(
+                        dataset, batch_size=args.batch_size,
+                        sampler=train_sampler, num_workers=args.workers, 
+                        pin_memory=args.pin_mem, drop_last=True)
 
-    data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers)
+    data_loader_test = data.DataLoader(
+                        dataset_test, batch_size=1, 
+                        sampler=test_sampler, num_workers=args.workers)
 
     # model initialization
     print(args.model)
     model = segmentation.__dict__[args.model](pretrained=args.pretrained_swin_weights,
                                               args=args)
-    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model.cuda()
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
     single_model = model.module  #ddp
 
     # print(model)
@@ -196,8 +126,8 @@ def main(args):
         bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
         bert_model.cuda()
-        bert_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
-        bert_model = torch.nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
+        bert_model = nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
+        bert_model = nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
         single_bert_model = bert_model
     else:
         bert_model = None
@@ -206,7 +136,7 @@ def main(args):
     # resume training
     if args.resume:
         print('Resuming training from checkpoint: {}'.format(args.resume))
-        checkpoint = torch.load(args.resume, map_location='cpu')
+        checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
         single_model.load_state_dict(checkpoint['model'], strict=False)
         if args.model != 'lavt_one':
             single_bert_model.load_state_dict(checkpoint['bert_model'])
@@ -254,6 +184,9 @@ def main(args):
                             lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
 
     # housekeeping
+    metric_format = tools.MetricLogger(delimiter="  ")
+    logger_train = logging.getLogger("train")
+    logger_val = logging.getLogger("val")
     start_time = time.time()
     iterations = 0
     best_oIoU = -0.1
@@ -273,9 +206,12 @@ def main(args):
 
     for epoch in range(max(0, resume_epoch+1), args.epochs):
         data_loader.sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, args.print_freq,
-                        iterations, bert_model, logging.getLogger("train"))
-        iou, overallIoU = evaluate(model, data_loader_test, bert_model, criterion, logging.getLogger("val"))
+        # train_one_epoch(model, criterion, optimizer, data_loader, \
+        #                 lr_scheduler, epoch, args.print_freq, \
+        #                 iterations, bert_model, metric_format, logger_train)
+        iou, overallIoU = evaluation.evaluate(model, data_loader_test, \
+                                              bert_model, criterion, tools.IoU, \
+                                              metric_format, logger_val, args)
         print('Average object IoU {}'.format(iou))
         print('Overall IoU {}'.format(overallIoU))
         best = (best_oIoU < overallIoU)
@@ -290,10 +226,10 @@ def main(args):
 
         if best:
             print('Better epoch: {}\n'.format(epoch))
-            utils.save_on_master(dict_to_save, os.path.join(args.output_dir,
+            tools.save_on_master(dict_to_save, os.path.join(args.output_dir,
                                                             'model_best_{}.pth'.format(args.model_id)))
             best_oIoU = overallIoU
-        utils.save_on_master(dict_to_save, os.path.join(args.output_dir,
+        tools.save_on_master(dict_to_save, os.path.join(args.output_dir,
                                                         'model_last_{}.pth'.format(args.model_id)))
         if args.local_rank == 0:
             wandb.save('model.h5')
@@ -305,7 +241,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    utils.seed_everything()
+    tools.seed_everything()
     parser = get_parser()
     args = parser.parse_args()
     if args.local_rank == 0:
@@ -335,7 +271,7 @@ if __name__ == "__main__":
     # logger = logging.getLogger()
 
     # set up distributed learning
-    utils.init_distributed_mode(args)
+    tools.init_distributed_mode(args)
     print('Image size: {}'.format(str(args.img_size)))
     main(args)
 

@@ -1,16 +1,16 @@
 import torch
-import torch.utils.data
+from torch.utils import data
 import logging
 import numpy as np
-import random
 from bert.modeling_bert import BertModel
 from lib import segmentation
-from utils import utils
-from utils import transforms as T
+from utils import tools, evaluation
+from utils import transforms
+from dataset.dataset_refer_bert import ReferDataset
 from args import get_parser
 
+
 def get_dataset(image_set, transform, args):
-    from data.dataset_refer_bert import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -23,7 +23,7 @@ def get_dataset(image_set, transform, args):
 
 def evaluate(model, data_loader, bert_model, device, logger):
     model.eval()
-    metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger = tools.MetricLogger(delimiter="  ")
 
     # evaluation variables
     cum_I, cum_U = 0, 0
@@ -34,7 +34,6 @@ def evaluate(model, data_loader, bert_model, device, logger):
     header = 'Test:'
 
     with torch.no_grad():
-
         for data in metric_logger.log_every(data_loader, 100, header, logger):
             image, target, sentences, attentions = data
             image, target, sentences, attentions = image.to(device), target.to(device), \
@@ -44,7 +43,8 @@ def evaluate(model, data_loader, bert_model, device, logger):
             target = target.cpu().data.numpy()
             for j in range(sentences.size(-1)):
                 if bert_model is not None:
-                    last_hidden_states = bert_model(sentences[:, :, j], attention_mask=attentions[:, :, j])[0]
+                    last_hidden_states = bert_model(sentences[:, :, j], 
+                                                    attention_mask=attentions[:, :, j])[0]
                     embedding = last_hidden_states.permute(0, 2, 1)
                     output = model(image, embedding, l_mask=attentions[:, :, j].unsqueeze(-1))
                 else:
@@ -54,7 +54,7 @@ def evaluate(model, data_loader, bert_model, device, logger):
 
                 output_mask = output.argmax(1).data.numpy()
 
-                I, U = computeIoU(output_mask, target)
+                I, U = tools.computeIoU(output_mask, target)
                 if U == 0:
                     this_iou = 0.0
                 else:
@@ -68,7 +68,6 @@ def evaluate(model, data_loader, bert_model, device, logger):
 
                 seg_total += 1
 
-
             del image, target, sentences, attentions, output,output_mask
             if bert_model is not None:
                 del last_hidden_states, embedding
@@ -80,38 +79,25 @@ def evaluate(model, data_loader, bert_model, device, logger):
     results_str = ''
     for n_eval_iou in range(len(eval_seg_iou_list)):
         results_str += '    precision@%s = %.2f\n' % \
-                       (str(eval_seg_iou_list[n_eval_iou]), seg_correct[n_eval_iou] * 100. / seg_total)
+                       (str(eval_seg_iou_list[n_eval_iou]), \
+                        seg_correct[n_eval_iou] * 100. / seg_total)
     results_str += '    overall IoU = %.2f\n' % (cum_I * 100. / cum_U)
     print(results_str)
 
 
-def get_transform(args):
-    transforms = [T.Resize(args.img_size, args.img_size),
-                  T.ToTensor(),
-                  T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                  ]
-
-    return T.Compose(transforms)
-
-
-def computeIoU(pred_seg, gd_seg):
-    I = np.sum(np.logical_and(pred_seg, gd_seg))
-    U = np.sum(np.logical_or(pred_seg, gd_seg))
-
-    return I, U
-
-
 def main(args):
     device = torch.device(args.device)
-    dataset_test, _ = get_dataset(args.split, get_transform(args=args), args)
+    dataset_test, _ = get_dataset(args.split, 
+                                  transforms.get_transform(args=args), 
+                                  args)
 
-    test_sampler = torch.utils.data.SequentialSampler(dataset_test)
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1,
-                                                   sampler=test_sampler, num_workers=args.workers)
+    test_sampler = data.SequentialSampler(dataset_test)
+    data_loader_test = data.DataLoader(dataset_test, batch_size=1,
+                                    sampler=test_sampler, num_workers=args.workers)
     print(args.model)
     single_model = segmentation.__dict__[args.model](pretrained='',args=args)
-    checkpoint = torch.load(args.resume, map_location='cpu')
-    print("checkpoint", checkpoint.keys())
+    checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
+    # print("checkpoint", checkpoint.keys())
     single_model.load_state_dict(checkpoint['model'], strict=False)
     model = single_model.to(device)
 
@@ -126,19 +112,19 @@ def main(args):
     else:
         bert_model = None
 
-    evaluate(model, data_loader_test, bert_model, device=device, logger=logging.getLogger("test"))
+    evaluate(model, data_loader_test, bert_model, 
+             device=device, logger=logging.getLogger("test"))
 
 
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
 
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/model_best_RMSIN.pth'
-    print('Image size: {}'.format(str(args.img_size)))
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth'
+    # print('Image size: {}'.format(str(args.img_size)))
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
     main(args)
 
 
-
-# python test.py --swin_type base --dataset rrsisd --resume /home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/model_best_RMSIN.pth --split val --workers 4 --window12 --img_size 480
+# python test.py --swin_type base --dataset rrsisd --resume /home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth --split val --workers 4 --window12 --img_size 480

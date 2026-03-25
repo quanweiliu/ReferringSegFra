@@ -46,7 +46,7 @@ def get_parser():
     parser.add_argument('--pretrained_swin_weights', default='./pretrained_weights/swin/swin_base_patch4_window12_384_22k.pth',
                         help='path to pre-trained Swin backbone weights')
     parser.add_argument('--output-dir', default='./checkpoints', help='path where to save checkpoint weights')
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--resume', default='/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth', help='resume from checkpoint')
     parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
     return parser
 

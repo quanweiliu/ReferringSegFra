@@ -6,7 +6,8 @@ import numpy as np
 from .cross_scale_interaction import CIM
 from timm.layers import DropPath, to_2tuple, trunc_normal_
 # from .mmcv_custom import load_checkpoint
-from mmengine.runner.checkpoint import load_checkpoint
+# from mmengine.runner.checkpoint import load_checkpoint
+from ._utils import load_checkpoint
 # from mmseg.utils import get_root_logger
 from typing import Optional
 from torch import Tensor

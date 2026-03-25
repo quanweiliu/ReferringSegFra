@@ -40,6 +40,12 @@ def IoU(pred, gt):
     return iou, intersection, union
 
 
+def computeIoU(pred_seg, gd_seg):
+    I = np.sum(np.logical_and(pred_seg, gd_seg))
+    U = np.sum(np.logical_or(pred_seg, gd_seg))
+
+    return I, U
+
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a

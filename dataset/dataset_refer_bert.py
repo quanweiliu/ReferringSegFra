@@ -11,7 +11,7 @@ import random
 
 from bert.tokenization_bert import BertTokenizer
 
-import h5py
+# import h5py
 from refer.refer import REFER
 
 from args import get_parser
