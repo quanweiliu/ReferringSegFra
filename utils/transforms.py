@@ -122,3 +122,12 @@ class Normalize(object):
         image = F.normalize(image, mean=self.mean, std=self.std)
         return image, target
 
+
+
+def get_transform(args):
+    transforms = [
+                  T.Resize(args.img_size, args.img_size),
+                  T.ToTensor(),
+                  T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                  ]
+    return T.Compose(transforms)

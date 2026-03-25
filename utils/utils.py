@@ -1,19 +1,44 @@
-from __future__ import print_function
-from collections import defaultdict, deque
-import datetime
-import math
+# from __future__ import print_function
+import os
+import sys
 import time
+import errno
+import random
+import math
+import datetime
+import numpy as np
+from collections import defaultdict, deque
+
 import torch
 import torch.distributed as dist
 import torch.backends.cudnn as cudnn
-
-import errno
-import os
-
-import sys
 # import logging
-
 # logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
+
+
+def seed_everything(seed=2401):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+
+def IoU(pred, gt):
+    pred = pred.argmax(1)
+
+    intersection = torch.sum(torch.mul(pred, gt))
+    union = torch.sum(torch.add(pred, gt)) - intersection
+
+    if intersection == 0 or union == 0:
+        iou = 0
+    else:
+        iou = float(intersection) / float(union)
+    return iou, intersection, union
+
 
 
 class SmoothedValue(object):

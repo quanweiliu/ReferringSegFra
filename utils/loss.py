@@ -51,7 +51,7 @@ class DiceLoss:
         return x.argmax(dim=self.axis)
 
 
-class Loss():
+class MixLoss():
     def __init__(self, weight=0.1):
         self.dice_loss = DiceLoss()
         self.ce_loss = torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([0.9, 1.1]).cuda())

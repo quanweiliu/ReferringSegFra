@@ -5,10 +5,10 @@ import time
 import datetime
 import torch
 import torch.utils.data
+from torch.optim.lr_scheduler import LambdaLR
 import json
 import wandb
 import cv2
-import random
 import logging
 import numpy as np
 import gc
@@ -16,25 +16,14 @@ import operator
 from functools import reduce
 from bert.modeling_bert import BertModel
 from lib import segmentation
-from utils.loss import Loss
+from data.dataset_refer_bert import ReferDataset
+from utils.loss import MixLoss
 from utils import utils
 from utils import transforms as T
 from args import get_parser
 
 
-def seed_everything(seed=2401):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-
-
 def get_dataset(image_set, transform, args):
-    from data.dataset_refer_bert import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -45,33 +34,7 @@ def get_dataset(image_set, transform, args):
     return ds, num_classes
 
 
-def IoU(pred, gt):
-    pred = pred.argmax(1)
-
-    intersection = torch.sum(torch.mul(pred, gt))
-    union = torch.sum(torch.add(pred, gt)) - intersection
-
-    if intersection == 0 or union == 0:
-        iou = 0
-    else:
-        iou = float(intersection) / float(union)
-    return iou, intersection, union
-
-
-def get_transform(args):
-    transforms = [
-                  T.Resize(args.img_size, args.img_size),
-                  T.ToTensor(),
-                  T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                  ]
-    return T.Compose(transforms)
-
-
-def criterion(input, target, weight=0.1):
-    return Loss(weight=weight)(input, target)
-
-
-def evaluate(model, data_loader, bert_model, epoch, logger):
+def evaluate(model, data_loader, bert_model, criterion, logger):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test: "
@@ -99,7 +62,6 @@ def evaluate(model, data_loader, bert_model, epoch, logger):
             sentences = sentences.squeeze(1)
             attentions = attentions.squeeze(1)
 
-
             if bert_model is not None:
                 last_hidden_states = bert_model(sentences, attention_mask=attentions)[0]
                 embedding = last_hidden_states.permute(0, 2, 1)  # (B, 768, N_l) to make Conv1d happy
@@ -108,7 +70,7 @@ def evaluate(model, data_loader, bert_model, epoch, logger):
             else:
                 output = model(image, sentences, l_mask=attentions)
 
-            iou, I, U = IoU(output, target)
+            iou, I, U = utils.IoU(output, target)
             loss = criterion(output, target)
             total_loss += loss.item()
             acc_ious += iou
@@ -171,13 +133,12 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
             output = model(image, embedding, attentions)#, sentences_hidden_state)# [4,2,120,120]
         else:
             output = model(image, sentences, attentions)#, sentences_hidden_state)
-        optimizer.zero_grad()
-        loss = criterion(output, target)
 
+        loss = criterion(output, target)
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         lr_scheduler.step()
-
 
         torch.cuda.synchronize()
         train_loss += loss.item()
@@ -198,11 +159,11 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
 
 def main(args):
     dataset, num_classes = get_dataset("train",
-                                       get_transform(args=args),
+                                       utils.get_transform(args=args),
                                        args=args)
 
     dataset_test, _ = get_dataset("val",
-                                  get_transform(args=args),
+                                  utils.get_transform(args=args),
                                   args=args)
 
     # batch sampler
@@ -232,8 +193,7 @@ def main(args):
 
     # print(model)
     if args.model != 'lavt_one':
-        model_class = BertModel
-        bert_model = model_class.from_pretrained(args.ck_bert)
+        bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
         bert_model.cuda()
         bert_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
@@ -245,6 +205,7 @@ def main(args):
 
     # resume training
     if args.resume:
+        print('Resuming training from checkpoint: {}'.format(args.resume))
         checkpoint = torch.load(args.resume, map_location='cpu')
         single_model.load_state_dict(checkpoint['model'], strict=False)
         if args.model != 'lavt_one':
@@ -286,10 +247,11 @@ def main(args):
                                   weight_decay=args.weight_decay,
                                   amsgrad=args.amsgrad
                                   )
+    criterion = MixLoss(weight=0.1)
 
     # learning rate scheduler
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,
-                                                     lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
+    lr_scheduler = LambdaLR(optimizer,
+                            lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
 
     # housekeeping
     start_time = time.time()
@@ -301,7 +263,6 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         resume_epoch = checkpoint['epoch']
-
     else:
         resume_epoch = -999
 
@@ -314,7 +275,7 @@ def main(args):
         data_loader.sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, args.print_freq,
                         iterations, bert_model, logging.getLogger("train"))
-        iou, overallIoU = evaluate(model, data_loader_test, bert_model, epoch, logging.getLogger("val"))
+        iou, overallIoU = evaluate(model, data_loader_test, bert_model, criterion, logging.getLogger("val"))
         print('Average object IoU {}'.format(iou))
         print('Overall IoU {}'.format(overallIoU))
         best = (best_oIoU < overallIoU)
@@ -344,7 +305,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    seed_everything()
+    utils.seed_everything()
     parser = get_parser()
     args = parser.parse_args()
     if args.local_rank == 0:
