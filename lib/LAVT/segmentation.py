@@ -4,6 +4,7 @@ from .mask_predictor import SimpleDecoding
 from .backbone import MultiModalSwinTransformer
 from ._utils import LAVT, LAVTOne
 
+# __all__ = ['lavt', 'lavt_one', 'rmsin']
 __all__ = ['lavt', 'lavt_one']
 
 
@@ -116,9 +117,7 @@ def _segm_lavt_one(pretrained, args):
                                          ape=False, drop_path_rate=0.3, patch_norm=True,
                                          out_indices=out_indices,
                                          use_checkpoint=False, num_heads_fusion=mha,
-                                         fusion_drop=args.fusion_drop,
-                                         # frozen_stages=args.frozen_stages,
-                                         # only_fusion=args.only_fusion,
+                                         fusion_drop=args.fusion_drop
                                          )
     if pretrained:
         print('Initializing Multi-modal Swin Transformer weights from ' + pretrained)

@@ -13,8 +13,8 @@ import logging
 import gc
 import operator
 from functools import reduce
+# from email import header
 from bert.modeling_bert import BertModel
-from lib import segmentation
 from dataset.dataset_refer_bert import ReferDataset
 from utils.loss import MixLoss
 from utils import tools, evaluation
@@ -33,16 +33,17 @@ def get_dataset(image_set, transform, args):
     return ds, num_classes
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch, print_freq,
-                    iterations, bert_model, metric_format, logger):
+def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoch,
+                    iterations, bert_model, metric_format, logger, args):
     model.train()
     metric_format.add_meter('lr', tools.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
+    wrapper_data = metric_format.log_every(data_loader, header, logger, args)
     train_loss = 0
     total_its = 0
 
     # for data in data_loader:
-    for i, data in enumerate(metric_format.log_every(data_loader, print_freq, header, logger)):
+    for i, data in enumerate(wrapper_data):
         total_its += 1
         image, target, sentences, attentions = data
         image, target, sentences, attentions = image.cuda(non_blocking=True),\
@@ -54,7 +55,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, epoc
         attentions = attentions.squeeze(1)
 
         if bert_model is not None:
-
             last_hidden_states = bert_model(sentences, attention_mask=attentions)[0]  # (6, 10, 768)
             embedding = last_hidden_states.permute(0, 2, 1)  # (B, 768, N_l) to make Conv1d happy
             attentions = attentions.unsqueeze(dim=-1)  # (batch, N_l, 1)
@@ -98,8 +98,10 @@ def main(args):
     print(f"local rank {args.local_rank} / global rank {tools.get_rank()} successfully built train dataset.")
     num_tasks = tools.get_world_size()
     global_rank = tools.get_rank()
-    train_sampler = data.distributed.DistributedSampler(dataset, num_replicas=num_tasks, rank=global_rank,
-                                                                    shuffle=True)
+    train_sampler = data.distributed.DistributedSampler(dataset, 
+                                                        num_replicas=num_tasks, 
+                                                        rank=global_rank,
+                                                        shuffle=True)
     test_sampler = data.SequentialSampler(dataset_test)
 
     # data loader
@@ -113,61 +115,77 @@ def main(args):
                         sampler=test_sampler, num_workers=args.workers)
 
     # model initialization
-    print(args.model)
-    model = segmentation.__dict__[args.model](pretrained=args.pretrained_swin_weights,
+    # print(args.model)
+    if args.model == 'lavt_one' or args.model == 'lavt':
+        from lib.LAVT import segmentation as lavt_seg
+        # model = lavt_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, 
+        #                                      args=args)
+        model = getattr(lavt_seg, args.model)(pretrained=args.pretrained_swin_weights, 
                                               args=args)
+    elif args.model == 'rmsin':
+        from lib.RMSIN import segmentation as rmsin_seg
+        # model = rmsin_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, 
+        #                                       args=args)
+        model = getattr(rmsin_seg, args.model)(pretrained=args.pretrained_swin_weights, 
+                                               args=args)
+    else:
+        assert False, 'Unknown model: {}'.format(args.model)
+
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model.cuda()
     model = nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
-    single_model = model.module  #ddp
+    pure_model = model.module  # 剥离权重的 module，方便后续加载权重和保存权重
 
     # print(model)
-    if args.model != 'lavt_one':
+    # if args.model != 'lavt_one' and args.model != 'rmsin':
+    if args.model == 'lavt':
         bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
         bert_model.cuda()
         bert_model = nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
         bert_model = nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
-        single_bert_model = bert_model
+        pure_bert_model = bert_model.module
     else:
         bert_model = None
-        single_bert_model = None
+        pure_bert_model = None
 
     # resume training
     if args.resume:
         print('Resuming training from checkpoint: {}'.format(args.resume))
         checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
-        single_model.load_state_dict(checkpoint['model'], strict=False)
-        if args.model != 'lavt_one':
-            single_bert_model.load_state_dict(checkpoint['bert_model'])
+        pure_model.load_state_dict(checkpoint['model'], strict=False)
+        if args.model == 'lavt':
+            pure_bert_model.load_state_dict(checkpoint['bert_model'])
+            print('Successfully loaded model and bert weights from checkpoint: {}'.format(args.resume))
 
     # parameters to optimize
     backbone_no_decay = list()
     backbone_decay = list()
-    for name, m in single_model.backbone.named_parameters():
+    for name, m in pure_model.backbone.named_parameters():
         if 'norm' in name or 'absolute_pos_embed' in name or 'relative_position_bias_table' in name:
             backbone_no_decay.append(m)
         else:
             backbone_decay.append(m)
 
-    if args.model != 'lavt_one':
+    # if args.model != 'lavt_one' and args.model != 'rmsin':
+    if args.model == 'lavt':
         params_to_optimize = [
             {'params': backbone_no_decay, 'weight_decay': 0.0},
             {'params': backbone_decay},
-            {"params": [p for p in single_model.classifier.parameters() if p.requires_grad]},
+            {"params": [p for p in pure_model.classifier.parameters() if p.requires_grad]},
             # the following are the parameters of bert
             {"params": reduce(operator.concat,
-                              [[p for p in single_bert_model.module.encoder.layer[i].parameters()
+                              [[p for p in pure_bert_model.encoder.layer[i].parameters()
                                 if p.requires_grad] for i in range(10)])},
         ]
     else:
         params_to_optimize = [
             {'params': backbone_no_decay, 'weight_decay': 0.0},
             {'params': backbone_decay},
-            {"params": [p for p in single_model.classifier.parameters() if p.requires_grad]},
+            {"params": [p for p in pure_model.classifier.parameters() if p.requires_grad]},
             # the following are the parameters of bert
             {"params": reduce(operator.concat,
-                              [[p for p in single_model.text_encoder.encoder.layer[i].parameters()
+                              [[p for p in pure_model.text_encoder.encoder.layer[i].parameters()
                                 if p.requires_grad] for i in range(10)])},
         ]
 
@@ -184,7 +202,7 @@ def main(args):
                             lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
 
     # housekeeping
-    metric_format = tools.MetricLogger(delimiter="  ")
+    metric_format = tools.MetricLogger(delimiter=" ")
     logger_train = logging.getLogger("train")
     logger_val = logging.getLogger("val")
     start_time = time.time()
@@ -207,30 +225,37 @@ def main(args):
     for epoch in range(max(0, resume_epoch+1), args.epochs):
         data_loader.sampler.set_epoch(epoch)
         # train_one_epoch(model, criterion, optimizer, data_loader, \
-        #                 lr_scheduler, epoch, args.print_freq, \
-        #                 iterations, bert_model, metric_format, logger_train)
-        iou, overallIoU = evaluation.evaluate(model, data_loader_test, \
-                                              bert_model, criterion, tools.IoU, \
+        #                 lr_scheduler, epoch, iterations, bert_model, \
+        #                 metric_format, logger_train, args)
+        iou, overallIoU = evaluation.evaluate(model, data_loader_test, bert_model, \
+                                              criterion, tools.IoU, \
                                               metric_format, logger_val, args)
         print('Average object IoU {}'.format(iou))
         print('Overall IoU {}'.format(overallIoU))
         best = (best_oIoU < overallIoU)
-        if single_bert_model is not None:
-            dict_to_save = {'model': single_model.state_dict(), 'bert_model': single_bert_model.state_dict(),
-                            'optimizer': optimizer.state_dict(), 'epoch': epoch, 'args': args,
+        if pure_bert_model is not None:
+            dict_to_save = {'model': pure_model.state_dict(), 
+                            'bert_model': pure_bert_model.state_dict(),
+                            'optimizer': optimizer.state_dict(), 
+                            'epoch': epoch, 
+                            'args': args,
                             'lr_scheduler': lr_scheduler.state_dict()}
         else:
-            dict_to_save = {'model': single_model.state_dict(),
-                            'optimizer': optimizer.state_dict(), 'epoch': epoch, 'args': args,
+            dict_to_save = {'model': pure_model.state_dict(),
+                            'optimizer': optimizer.state_dict(), 
+                            'epoch': epoch, 
+                            'args': args,
                             'lr_scheduler': lr_scheduler.state_dict()}
 
         if best:
             print('Better epoch: {}\n'.format(epoch))
-            tools.save_on_master(dict_to_save, os.path.join(args.output_dir,
-                                                            'model_best_{}.pth'.format(args.model_id)))
+            tools.save_on_master(dict_to_save, 
+                                 os.path.join(args.output_dir,
+                                            'model_best_{}.pth'.format(args.model)))
             best_oIoU = overallIoU
-        tools.save_on_master(dict_to_save, os.path.join(args.output_dir,
-                                                        'model_last_{}.pth'.format(args.model_id)))
+        tools.save_on_master(dict_to_save, 
+                             os.path.join(args.output_dir,
+                                        'model_last_{}.pth'.format(args.model)))
         if args.local_rank == 0:
             wandb.save('model.h5')
 
@@ -245,10 +270,10 @@ if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
     if args.local_rank == 0:
-        wandb.init(project=args.model_id)
+        wandb.init(project=args.model)
 
     # create rundir and copy args file
-    run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model_id
+    run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model
     args.output_dir = os.path.join(args.output_dir, str(run_id))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -260,9 +285,11 @@ if __name__ == "__main__":
                         datefmt="%Y-%m-%d %H:%M:%S", \
                         handlers=[
                             logging.FileHandler(os.path.join(args.output_dir, "ref_seg.log"), mode="a"),  # 用于文件保存
-                            logging.StreamHandler()   #用于文件打印
+                            logging.StreamHandler()   # 用于在 terminal 中的文件打印
                         ],
                         )
+    
+    # 下面这种写法无法在 terminal 中打印日志
     # logging.basicConfig(level=logging.INFO, \
     #                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", 
     #                     datefmt="%Y-%m-%d %H:%M:%S", 

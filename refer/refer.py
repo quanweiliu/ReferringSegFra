@@ -24,16 +24,16 @@ showMask   - show mask of the referred object given ref
 
 import sys
 import os.path as osp
+import time
 import json
 import pickle as pickle
-import time
 import itertools
+import numpy as np 
 import skimage.io as io
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon, Rectangle
 from pprint import pprint
-import numpy as np 
 from pycocotools import mask
 
 
@@ -46,7 +46,9 @@ class REFER:
         print('loading dataset %s into memory...' % dataset)
         if dataset == 'refcocog':
             print('Split by {}!'.format(splitBy))
-        self.ROOT_DIR = osp.abspath(osp.dirname(__file__))
+
+        # 仅当 Python 以脚本（.py 文件）形式运行时，解释器才会自动创建 __file__ 变量。
+        # self.ROOT_DIR = osp.abspath(osp.dirname(__file__))
         self.DATA_DIR = osp.join(data_root, dataset)
         if dataset in ['refcoco', 'refcoco+', 'refcocog']:
             self.IMAGE_DIR = osp.join(data_root, 'images/mscoco/images/train2014')

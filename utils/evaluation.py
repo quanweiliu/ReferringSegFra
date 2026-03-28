@@ -9,6 +9,7 @@ import numpy as np
 def evaluate(model, data_loader, bert_model, criterion, IoU, metric_format, logger, args):
     model.eval()
     header = "Test: "
+    wrapper_data = metric_format.log_every(data_loader, header, logger, args)
     total_its = 0
     acc_ious = 0
 
@@ -21,7 +22,7 @@ def evaluate(model, data_loader, bert_model, criterion, IoU, metric_format, logg
     total_loss = 0
 
     with torch.no_grad():
-        for data in metric_format.log_every(data_loader, 100, header, logger):
+        for data in wrapper_data:
             total_its += 1
             image, target, sentences, attentions = data
             # pixels = cv2.countNonZero(target.data.numpy()[0]) / 230400.

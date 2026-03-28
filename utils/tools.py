@@ -2,9 +2,8 @@
 import os
 import sys
 import time
-import errno
+# import errno
 import random
-import math
 import datetime
 import numpy as np
 from collections import defaultdict, deque
@@ -12,8 +11,6 @@ from collections import defaultdict, deque
 import torch
 import torch.distributed as dist
 import torch.backends.cudnn as cudnn
-# import logging
-# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", filename="rmsin_training.log", filemode="a")
 
 
 def seed_everything(seed=2401):
@@ -122,7 +119,6 @@ class MetricLogger(object):
             self.meters[k].update(v)
 
 
-
     def __getattr__(self, attr):
         if attr in self.meters:
             return self.meters[attr]
@@ -156,7 +152,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None, logger=None):
+    def log_every(self, iterable, header=None, logger=None, args=None):
         print(iterable)
         i = 0
         if not header:
@@ -180,22 +176,24 @@ class MetricLogger(object):
             data_time.update(time.time() - end)
             yield obj
             iter_time.update(time.time() - end)
-            if i % print_freq == 0:
+            if i % args.print_freq == 0:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
                 if logger is not None:
-                    logger.info(log_msg.format(
-                        i, len(iterable), eta=eta_string,
-                        meters=str(self),
-                        time=str(iter_time), data=str(data_time),
-                        memory=torch.cuda.max_memory_allocated() / MB))
+                    if args.local_rank == 0:
+                        logger.info(log_msg.format(
+                            i, len(iterable), eta=eta_string,
+                            meters=str(self),
+                            time=str(iter_time), data=str(data_time),
+                            memory=torch.cuda.max_memory_allocated() / MB))
                 else:
-                    print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
-                        meters=str(self),
-                        time=str(iter_time), data=str(data_time),
-                        memory=torch.cuda.max_memory_allocated() / MB)) 
+                    if args.local_rank == 0:
+                        print(log_msg.format(
+                            i, len(iterable), eta=eta_string,
+                            meters=str(self),
+                            time=str(iter_time), data=str(data_time),
+                            memory=torch.cuda.max_memory_allocated() / MB)) 
                     sys.stdout.flush()
 
             i += 1
@@ -203,14 +201,6 @@ class MetricLogger(object):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('{} Total time: {}'.format(header, total_time_str))
-
-
-def mkdir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
 
 def setup_for_distributed(is_master):
@@ -257,6 +247,14 @@ def save_on_master(*args, **kwargs):
         torch.save(*args, **kwargs)
 
 
+# def mkdir(path):
+#     try:
+#         os.makedirs(path)
+#     except OSError as e:
+#         if e.errno != errno.EEXIST:
+#             raise
+
+
 def init_distributed_mode(args):
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         rank = int(os.environ["RANK"])
@@ -271,7 +269,7 @@ def init_distributed_mode(args):
     torch.distributed.barrier()
     setup_for_distributed(is_main_process())
 
-    if args.output_dir:
-        mkdir(args.output_dir)
-    if args.model_id:
-        mkdir(os.path.join('./models/', args.model_id))
+    # if args.output_dir:
+    #     mkdir(args.output_dir)
+    # if args.model_id:
+    #     mkdir(os.path.join('./models/', args.model_id))

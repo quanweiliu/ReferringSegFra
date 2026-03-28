@@ -20,21 +20,18 @@ def get_parser():
     parser.add_argument('--mha', default='', help='If specified, should be in the format of a-b-c-d, e.g., 4-4-4-4,'
                                                   'where a, b, c, and d refer to the numbers of heads in stage-1,'
                                                   'stage-2, stage-3, and stage-4 PWAMs')
-    parser.add_argument('--model', default='lavt_one', help='model: lavt, lavt_one')
-    parser.add_argument('--model_id', default='RMSIN', \
-                        choices=['LAVT', 'RMSIN'], \
-                        help='name to identify the model')
-
+    parser.add_argument('--model', default='lavt', choices=['lavt', 'lavt_one', 'rmsin'], \
+                        help='model to train or test')
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')
-    parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
+    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--split', default='test', help='only used when testing')
     parser.add_argument('--splitBy', default='unc', help='change to umd or google when the datasset is G-Ref (RefCOCOg)')
     parser.add_argument('--swin_type', default='base',
                         help='tiny, small, base, or large variants of the Swin Transformer')
     parser.add_argument('--wd', '--weight-decay', default=1e-2, type=float, metavar='W', help='weight decay',
                         dest='weight_decay')
-    parser.add_argument('--window12', action='store_true',
+    parser.add_argument('--window12', action='store_false',
                         help='only needs specified when testing,'
                              'when training, window size is inferred from pre-trained weights file name'
                              '(containing \'window12\'). Initialize Swin with window size 12 instead of the default 7.')
@@ -46,7 +43,10 @@ def get_parser():
     parser.add_argument('--pretrained_swin_weights', default='./pretrained_weights/swin/swin_base_patch4_window12_384_22k.pth',
                         help='path to pre-trained Swin backbone weights')
     parser.add_argument('--output-dir', default='./checkpoints', help='path where to save checkpoint weights')
-    parser.add_argument('--resume', default='/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth', help='resume from checkpoint')
+    parser.add_argument('--resume', default='/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/LAVT/model_best_lavt.pth', \
+                        help='resume from checkpoint')
+    # parser.add_argument('--resume', default='', \
+    #                     help='resume from checkpoint')
     parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
     return parser
 

@@ -1,24 +1,18 @@
 import os
-import sys
-import torch.utils.data as data
-import torch
-from torchvision import transforms
-from torch.autograd import Variable
-import numpy as np
-from PIL import Image
-import torchvision.transforms.functional as TF
 import random
+import numpy as np
+import torch
+from torch.utils import data
+from PIL import Image
 
 from bert.tokenization_bert import BertTokenizer
-
-# import h5py
 from refer.refer import REFER
 
-from args import get_parser
+# from args import get_parser
 
 # Dataset configuration initialization
-parser = get_parser()
-args = parser.parse_args()
+# parser = get_parser()
+# args = parser.parse_args()
 
 
 def add_random_boxes(img, min_num=20, max_num=60, size=32):

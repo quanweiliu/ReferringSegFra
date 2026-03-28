@@ -3,7 +3,7 @@ from torch.utils import data
 import logging
 import numpy as np
 from bert.modeling_bert import BertModel
-from lib import segmentation
+# from lib import segmentation
 from utils import tools, evaluation
 from utils import transforms
 from dataset.dataset_refer_bert import ReferDataset
@@ -34,7 +34,7 @@ def evaluate(model, data_loader, bert_model, device, logger):
     header = 'Test:'
 
     with torch.no_grad():
-        for data in metric_logger.log_every(data_loader, 100, header, logger):
+        for data in metric_logger.log_every(data_loader, header, logger, args):
             image, target, sentences, attentions = data
             image, target, sentences, attentions = image.to(device), target.to(device), \
                                                    sentences.to(device), attentions.to(device)
@@ -94,19 +94,39 @@ def main(args):
     test_sampler = data.SequentialSampler(dataset_test)
     data_loader_test = data.DataLoader(dataset_test, batch_size=1,
                                     sampler=test_sampler, num_workers=args.workers)
-    print(args.model)
-    single_model = segmentation.__dict__[args.model](pretrained='',args=args)
+    # print(args.model)
+    if args.model == 'lavt_one' or args.model == 'lavt':
+        from lib.LAVT import segmentation as lavt_seg
+        # model = lavt_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, args=args)
+        model = getattr(lavt_seg, args.model)(pretrained='', args=args)
+    elif args.model == 'rmsin':
+        from lib.RMSIN import segmentation as rmsin_seg
+        # model = rmsin_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, args=args)
+        model = getattr(rmsin_seg, args.model)(pretrained='', args=args)
+    else:
+        assert False, 'Unknown model: {}'.format(args.model)
+    # single_model = segmentation.__dict__[args.model](pretrained='',args=args)
     checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
     # print("checkpoint", checkpoint.keys())
-    single_model.load_state_dict(checkpoint['model'], strict=False)
-    model = single_model.to(device)
+    model.load_state_dict(checkpoint['model'], strict=False)
+    model = model.to(device)
 
-    if args.model != 'lavt_one':
-        model_class = BertModel
-        single_bert_model = model_class.from_pretrained(args.ck_bert)
+    if args.model == 'lavt':
+        # bert_state_dict = checkpoint['bert_model'] # 或者 checkpoint['state_dict']
+        # # 3. 创建一个新的字典，去掉 'module.' 前缀
+        # new_state_dict = {}
+        # for k, v in bert_state_dict.items():
+        #     if k.startswith('module.'):
+        #         name = k[7:] # 去掉前 7 个字符 'module.'
+        #     else:
+        #         name = k
+        #     new_state_dict[name] = v
+
+        single_bert_model = BertModel.from_pretrained(args.ck_bert)
         # work-around for a transformers bug; need to update to a newer version of transformers to remove these two lines
-        if args.ddp_trained_weights:
-            single_bert_model.pooler = None
+        single_bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
+        # if args.ddp_trained_weights:
+        #     single_bert_model.pooler = None
         single_bert_model.load_state_dict(checkpoint['bert_model'])
         bert_model = single_bert_model.to(device)
     else:
@@ -120,7 +140,13 @@ if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
 
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth'
+    args.model = 'rmsin'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0324-1831-rmsin/model_last_rmsin.pth'
+    # args.model = 'lavt_one'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0326-0951-lavt_one/model_last_lavt_one.pth'
+    # args.model = 'lavt'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/LAVT/model_best_lavt.pth'
+    print('Weights: {}'.format(args.resume))
     # print('Image size: {}'.format(str(args.img_size)))
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
