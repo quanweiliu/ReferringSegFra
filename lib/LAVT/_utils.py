@@ -1,9 +1,45 @@
-from collections import OrderedDict
+import os
 import sys
 import torch
 from torch import nn
 from torch.nn import functional as F
+from collections import OrderedDict
 from bert.modeling_bert import BertModel
+
+
+def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=None):
+    """
+    完全替代 mmengine.runner.checkpoint.load_checkpoint
+    """
+    # 1. 加载文件
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"找不到权重文件: {filename}")
+        
+    checkpoint = torch.load(filename, map_location=map_location)
+
+    # 2. 提取真正的参数字典 (处理 mmengine 保存的嵌套格式)
+    if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+        state_dict = checkpoint['state_dict']
+    elif isinstance(checkpoint, dict) and 'model' in checkpoint:
+            state_dict = checkpoint['model']
+    else:
+        state_dict = checkpoint
+
+    # 3. 移除分布式训练可能产生的 'module.' 前缀
+    if list(state_dict.keys())[0].startswith('module.'):
+        state_dict = {k[7:]: v for k, v in state_dict.items()}
+
+    # 4. 加载到模型中
+    load_info = model.load_state_dict(state_dict, strict=strict)
+    
+    # 5. 打印日志 (如果有传入 logger)
+    if logger is not None:
+        if load_info.missing_keys:
+            logger.warning(f"缺失的权重键值: {load_info.missing_keys}")
+        if load_info.unexpected_keys:
+            logger.warning(f"冗余的权重键值: {load_info.unexpected_keys}")
+            
+    return state_dict # 模仿 mmengine 返回 state_dict 的习惯
 
 
 class _LAVTSimpleDecode(nn.Module):

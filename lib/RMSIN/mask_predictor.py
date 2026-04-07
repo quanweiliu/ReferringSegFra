@@ -49,6 +49,7 @@ class SimpleDecoding(nn.Module):
         # fuse Y4 and Y3
         if x_c4.size(-2) < x_c3.size(-2) or x_c4.size(-1) < x_c3.size(-1):
             x_c4 = F.interpolate(input=x_c4, scale_factor=2, mode='bilinear', align_corners=True)
+        # print("x_c4 shape after interpolation (if applied):", x_c4.shape)  # Debug: 打印 x_c4 的形状
         x = torch.cat([x_c4, x_c3], dim=1)
         x = self.conv1_4(x)
         x = self.bn1_4(x)
@@ -59,6 +60,7 @@ class SimpleDecoding(nn.Module):
         # fuse top-down features and Y2 features
         if x.size(-2) < x_c2.size(-2) or x.size(-1) < x_c2.size(-1):
             x = F.interpolate(input=x, scale_factor=2, mode='bilinear', align_corners=True)
+        # print("x shape after interpolation (if applied):", x.shape)  # Debug: 打印 x 的形状
         x = torch.cat([x, x_c2], dim=1)
         x = self.conv1_3(x)
         x = self.bn1_3(x)
@@ -69,6 +71,7 @@ class SimpleDecoding(nn.Module):
         # fuse top-down features and Y1 features
         if x.size(-2) < x_c1.size(-2) or x.size(-1) < x_c1.size(-1):
             x = F.interpolate(input=x, scale_factor=2, mode='bilinear', align_corners=True)
+        # print("x shape after interpolation (if applied):", x.shape)  # Debug: 打印 x 的形状
         x = torch.cat([x, x_c1], dim=1)
         x = self.conv1_2(x)
         x = self.bn1_2(x)
@@ -76,5 +79,6 @@ class SimpleDecoding(nn.Module):
         x = self.conv2_2(x)
         x = self.bn2_2(x)
         x = self.relu2_2(x)
+        # print("x shape before final conv:", x.shape)  # Debug: 打印 x 的形状
 
         return self.conv1_1(x)

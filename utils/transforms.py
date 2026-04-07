@@ -125,6 +125,19 @@ class Normalize(object):
 
 
 def get_transform(args):
+    '''
+    Compose several transforms together.
+    Args:
+        args: command-line arguments containing the image size and other parameters for data augmentation
+    Returns:
+        A composed transform function that takes in an image and its corresponding target mask, and applies the specified transformations to both.
+
+
+    官方实现的 Compose 只能对图像进行变换，无法同时对图像和对应的标签进行变换。
+    我们需要自定义一个 Compose 类，使其能够同时对图像和标签进行相同的变换操作。
+    例如，在进行随机裁剪时，我们需要确保图像和标签被裁剪成相同的区域，以保持它们之间的对应关系。
+    自定义的 Compose 类可以确保在应用每个变换时，图像和标签都被正确地处理，从而避免了数据不一致的问题。
+    '''
     transforms = [
                   Resize(args.img_size, args.img_size),
                   ToTensor(),

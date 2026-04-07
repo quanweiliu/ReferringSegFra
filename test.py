@@ -6,11 +6,15 @@ from bert.modeling_bert import BertModel
 # from lib import segmentation
 from utils import tools, evaluation
 from utils import transforms
-from dataset.dataset_refer_bert import ReferDataset
+# from dataset.dataset_refer_bert import ReferDataset
 from args import get_parser
 
 
 def get_dataset(image_set, transform, args):
+    if args.dataset == 'rrsisd':
+        from dataset.dataset_refer_bert import ReferDataset
+    elif args.dataset == 'refsegrs':
+        from dataset.newdataset_refer_bert import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -21,7 +25,7 @@ def get_dataset(image_set, transform, args):
     return ds, num_classes
 
 
-def evaluate(model, data_loader, bert_model, device, logger):
+def evaluate(model, data_loader, bert_model, logger, args):
     model.eval()
     metric_logger = tools.MetricLogger(delimiter="  ")
 
@@ -36,8 +40,10 @@ def evaluate(model, data_loader, bert_model, device, logger):
     with torch.no_grad():
         for data in metric_logger.log_every(data_loader, header, logger, args):
             image, target, sentences, attentions = data
-            image, target, sentences, attentions = image.to(device), target.to(device), \
-                                                   sentences.to(device), attentions.to(device)
+            image, target, sentences, attentions = image.to(args.device), \
+                                                   target.to(args.device), \
+                                                   sentences.to(args.device), \
+                                                   attentions.to(args.device)
             sentences = sentences.squeeze(1)
             attentions = attentions.squeeze(1)
             target = target.cpu().data.numpy()
@@ -86,7 +92,7 @@ def evaluate(model, data_loader, bert_model, device, logger):
 
 
 def main(args):
-    device = torch.device(args.device)
+    # device = torch.device(args.device)
     dataset_test, _ = get_dataset(args.split, 
                                   transforms.get_transform(args=args), 
                                   args)
@@ -103,13 +109,19 @@ def main(args):
         from lib.RMSIN import segmentation as rmsin_seg
         # model = rmsin_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, args=args)
         model = getattr(rmsin_seg, args.model)(pretrained='', args=args)
+    elif args.model == 'rrsis':
+        from lib.RRSIS import segmentation as rrsis_seg
+        # model = rrsis_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, 
+        #                                       args=args)
+        model = getattr(rrsis_seg, args.model)(pretrained=args.pretrained_swin_weights, 
+                                               args=args)
     else:
         assert False, 'Unknown model: {}'.format(args.model)
     # single_model = segmentation.__dict__[args.model](pretrained='',args=args)
     checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
     # print("checkpoint", checkpoint.keys())
     model.load_state_dict(checkpoint['model'], strict=False)
-    model = model.to(device)
+    model = model.to(args.device)
 
     if args.model == 'lavt':
         # bert_state_dict = checkpoint['bert_model'] # 或者 checkpoint['state_dict']
@@ -128,24 +140,29 @@ def main(args):
         # if args.ddp_trained_weights:
         #     single_bert_model.pooler = None
         single_bert_model.load_state_dict(checkpoint['bert_model'])
-        bert_model = single_bert_model.to(device)
+        bert_model = single_bert_model.to(args.device)
     else:
         bert_model = None
 
     evaluate(model, data_loader_test, bert_model, 
-             device=device, logger=logging.getLogger("test"))
+             logger=logging.getLogger("test"), args=args)
 
 
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
+    args.dataset = 'refsegrs' # or rrsisd / refsegrs
 
     args.model = 'rmsin'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0324-1831-rmsin/model_last_rmsin.pth'
-    # args.model = 'lavt_one'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0326-0951-lavt_one/model_last_lavt_one.pth'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0324-1831-rmsin/model_best_rmsin.pth'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
+    args.model = 'lavt_one'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0326-0951-lavt_one/model_best_lavt_one.pth'
+    args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
     # args.model = 'lavt'
     # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/LAVT/model_best_lavt.pth'
+    args.model = 'rrsis'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis/model_best_rrsis.pth'
     print('Weights: {}'.format(args.resume))
     # print('Image size: {}'.format(str(args.img_size)))
 

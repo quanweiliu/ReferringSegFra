@@ -4,7 +4,6 @@ from .mask_predictor import SimpleDecoding
 from .backbone import MultiModalSwinTransformer
 from ._utils import LAVT, LAVTOne
 
-# __all__ = ['lavt', 'lavt_one', 'rmsin']
 __all__ = ['lavt', 'lavt_one']
 
 
@@ -72,6 +71,7 @@ def _load_model_lavt(pretrained, args):
 
 
 def lavt(pretrained='', args=None):
+    print('Loading LAVT model...')
     return _load_model_lavt(pretrained, args)
 
 
@@ -127,6 +127,7 @@ def _segm_lavt_one(pretrained, args):
         backbone.init_weights()
 
     model_map = [SimpleDecoding, LAVTOne]
+
     classifier = model_map[0](8*embed_dim)
     base_model = model_map[1]
 
@@ -140,4 +141,5 @@ def _load_model_lavt_one(pretrained, args):
 
 
 def lavt_one(pretrained='', args=None):
+    print('Loading LAVT One model...')
     return _load_model_lavt_one(pretrained, args)

@@ -5,20 +5,8 @@ from torch import nn
 from torch.nn import functional as F
 from collections import OrderedDict
 from bert.modeling_bert import BertModel
+from einops import rearrange, repeat
 
-
-def load_weights(model, load_path):
-    dict_trained = torch.load(load_path)['model']
-    dict_new = model.state_dict().copy()
-    for key in dict_new.keys():
-        if key in dict_trained.keys():
-            dict_new[key] = dict_trained[key]
-    model.load_state_dict(dict_new)
-    del dict_new
-    del dict_trained
-    torch.cuda.empty_cache()
-    print('load weights from {}'.format(load_path))
-    return model
 
 
 def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=None):
@@ -61,13 +49,17 @@ class _LAVTSimpleDecode(nn.Module):
         super(_LAVTSimpleDecode, self).__init__()
         self.backbone = backbone
         self.classifier = classifier
+        #self.gtoken = torch.nn.Parameter(torch.randn([1,768,20]))
+        #self.gtoken = torch.nn.Parameter(torch.ones([1,768,20]))
 
     def forward(self, x, l_feats, l_mask):
         input_shape = x.shape[-2:]
         features = self.backbone(x, l_feats, l_mask)
         x_c1, x_c2, x_c3, x_c4 = features
-
-        x = self.classifier(x_c4, x_c3, x_c2, x_c1)
+        B = x.shape[0]
+        #gtoken = repeat(self.gtoken, '1 c d -> b c d', b = B)
+        gtoken = l_feats
+        x = self.classifier(x_c4, x_c3, x_c2, x_c1, gtoken)
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=True)
 
         return x
@@ -87,24 +79,22 @@ class _LAVTOneSimpleDecode(nn.Module):
         self.classifier = classifier
         self.text_encoder = BertModel.from_pretrained(args.ck_bert)
         self.text_encoder.pooler = None
+        #self.gtoken = torch.Parameter(torch.randn(l_feats.shape))
 
     def forward(self, x, text, l_mask):
         input_shape = x.shape[-2:]
         ### language inference ###
         l_feats = self.text_encoder(text, attention_mask=l_mask)[0]  # (6, 10, 768)
-        l_feats = l_feats.permute(0, 2, 1)  # (B, 768, N_l)
+        l_feats = l_feats.permute(0, 2, 1)  # (B, 768, N_l) to make Conv1d happy
         l_mask = l_mask.unsqueeze(dim=-1)  # (batch, N_l, 1)
         ##########################
-        # print("Input image shape:", x.shape)  # Debug: 打印输入图像的形状  8, 3, 480, 480
-        # print("Text features shape:", l_feats.shape)  # Debug: 打印文本特征的形状  8, 768, 20
-        # print("Language mask shape:", l_mask.shape)  # Debug: 打印语言掩码的形状  8, 20, 1
         features = self.backbone(x, l_feats, l_mask)
-        # print("Backbone output feature shapes:", [f.shape for f in features])  # Debug: 打印 backbone 输出的特征图形状
-        x_c1, x_c2, x_c3, x_c4  = features   # e.g. x_c1:[B, 128, 120, 120], x_c2:[B, 256, 60, 60], x_c3:[B, 512, 30, 30], x_c4:[B, 1024, 15, 15]
-        x = self.classifier(x_c4, x_c3, x_c2, x_c1)
+        x_c1, x_c2, x_c3, x_c4 = features
+        x = self.classifier(x_c4, x_c3, x_c2, x_c1, l_feats)
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=True)
+
         return x
 
 
-class LAVTOne(_LAVTOneSimpleDecode):  #change
+class LAVTOne(_LAVTOneSimpleDecode):
     pass

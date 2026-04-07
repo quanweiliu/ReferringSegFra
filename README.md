@@ -5,7 +5,8 @@
 | Code     |Backbone  | Paper |  Journal |  Year | 
 | ----------- | ----------- | ----------- |----------- |----------- |
 | [LAVT](https://github.com/yz93/LAVT-RIS)     | Swin+Bert | [LAVT: Language-Aware Vision Transformer for Referring Image Segmentation](https://openaccess.thecvf.com/content/CVPR2022/html/Yang_LAVT_Language-Aware_Vision_Transformer_for_Referring_Image_Segmentation_CVPR_2022_paper.html)       | CVPR       | 2022       | 
-| [RMSIN](https://github.com/Lsan2401/RMSIN)     | Swin+Bert | [Rotated Multi-Scale Interaction Network for Referring Remote Sensing Image Segmentation](https://ieeexplore.ieee.org/document/10657655/)       | CVPR       | 2024       | 
+| [RRSIS](https://gitlab.lrz.de/ai4eo/reasoning/rrsis)     | Swin+Bert | [RRSIS: Referring Remote Sensing  Image Segmentation](https://ieeexplore.ieee.org/abstract/document/10458079/)       | TGRS       | 2024       | 
+| [RMSIN](https://github.com/Lsan2401/RMSIN)     | Swin+Bert | [Rotated Multi-Scale Interaction Network for Referring Remote Sensing Image Segmentation](https://openaccess.thecvf.com/content/CVPR2024/html/Liu_Rotated_Multi-Scale_Interaction_Network_for_Referring_Remote_Sensing_Image_Segmentation_CVPR_2024_paper.html)       | CVPR       | 2024       | 
 
 This repository provides the a collection of implementations for refering segmentation. I hopt it could be a good start for this task. 
 

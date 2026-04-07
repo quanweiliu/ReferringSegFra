@@ -4,7 +4,7 @@ from .mask_predictor import SimpleDecoding
 from .backbone import MultiModalSwinTransformer
 from ._utils import LAVT, LAVTOne
 
-__all__ = ['rmsin']
+__all__ = ['rrsis']
 
 
 # LAVT
@@ -77,7 +77,7 @@ __all__ = ['rmsin']
 ###############################################
 # LAVT One: put BERT inside the overall model #
 ###############################################
-def _segm_rmsin_one(pretrained, args):
+def _segm_rrsis_one(pretrained, args):
     # initialize the SwinTransformer backbone with the specified version
     if args.swin_type == 'tiny':
         embed_dim = 96
@@ -116,7 +116,7 @@ def _segm_rmsin_one(pretrained, args):
                                          ape=False, drop_path_rate=0.3, patch_norm=True,
                                          out_indices=out_indices,
                                          use_checkpoint=False, num_heads_fusion=mha,
-                                         fusion_drop=args.fusion_drop,
+                                         fusion_drop=args.fusion_drop
                                          )
     if pretrained:
         print('Initializing Multi-modal Swin Transformer weights from ' + pretrained)
@@ -134,11 +134,11 @@ def _segm_rmsin_one(pretrained, args):
     return model
 
 
-def _load_model_rmsin_one(pretrained, args):
-    model = _segm_rmsin_one(pretrained, args)
+def _load_model_rrsis_one(pretrained, args):
+    model = _segm_rrsis_one(pretrained, args)
     return model
 
 
-def rmsin(pretrained='', args=None):
-    print('Loading RMSIN model...')
-    return _load_model_rmsin_one(pretrained, args)
+def rrsis(pretrained='', args=None):
+    print('Loading RRSIS model...')
+    return _load_model_rrsis_one(pretrained, args)

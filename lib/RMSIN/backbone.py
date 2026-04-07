@@ -534,7 +534,10 @@ class MultiModalSwinTransformer(nn.Module):
 
     def forward(self, x, l, l_mask):
         """Forward function."""
+
+        # print("Input image shape:", x.shape)  # Debug: 打印输入图像的形状
         x = self.patch_embed(x)
+        # print("Embedded image shape:", x.shape)  # Debug: 打印输入图像的形状
 
         Wh, Ww = x.size(2), x.size(3)
         if self.ape:
@@ -544,6 +547,7 @@ class MultiModalSwinTransformer(nn.Module):
         else:
             x = x.flatten(2).transpose(1, 2)
         x = self.pos_drop(x)
+        # print("After patch embedding and position embedding, feature shape:", x.shape)  # Debug: 打印特征的形状
 
         outs = []
         for i in range(self.num_layers):
@@ -667,6 +671,10 @@ class MMBasicLayer(nn.Module):
         mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
         attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+
+        # print("Before Swin Transformer Blocks, feature shape:", x.shape)  # Debug: 打印特征的形状
+        # print("Text features shape:", l.shape)  # Debug: 打印文本特征的形状
+        # print("Language mask shape:", l_mask.shape)  # Debug: 打印语言掩码的形状
 
         for blk in self.blocks:
             blk.H, blk.W = H, W

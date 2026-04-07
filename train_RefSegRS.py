@@ -15,7 +15,8 @@ import operator
 from functools import reduce
 # from email import header
 from bert.modeling_bert import BertModel
-from dataset.dataset_refer_bert import ReferDataset
+# from dataset.dataset_refer_bert import ReferDataset
+from dataset.newdataset_refer_bert import ReferDataset
 from utils.loss import MixLoss
 from utils import tools, evaluation
 from utils import transforms
@@ -280,7 +281,7 @@ if __name__ == "__main__":
 
     # create rundir and copy args file
     run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model
-    args.output_dir = os.path.join(args.output_dir, "RRSISD_" + str(run_id))
+    args.output_dir = os.path.join(args.output_dir, "RefSegRs_" + str(run_id))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     with open(os.path.join(args.output_dir, 'args.json'), 'w') as fid:
@@ -309,4 +310,4 @@ if __name__ == "__main__":
     main(args)
 
 
-# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --img_size 480 
+# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train_RefSegRS.py --img_size 480 

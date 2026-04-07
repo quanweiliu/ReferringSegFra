@@ -5,9 +5,8 @@ import torch.utils.checkpoint as checkpoint
 import numpy as np
 from timm.layers import DropPath, to_2tuple, trunc_normal_
 # from .mmcv_custom import load_checkpoint
-# from mmengine.runner.checkpoint import load_checkpoint
-from ._utils import load_checkpoint
 # from mmseg.utils import get_root_logger
+from ._utils import load_checkpoint
 import logging
 
 
@@ -456,7 +455,6 @@ class MultiModalSwinTransformer(nn.Module):
         if isinstance(pretrained, str):
             self.apply(_init_weights)
             # logger = get_root_logger()
-            # load_checkpoint(self, pretrained, strict=('upernet' in pretrained), logger=logger)
             logger = logging.getLogger(__name__)
             load_checkpoint(self, pretrained, strict=('upernet' in pretrained), map_location='cpu', logger=logger)
         elif pretrained is None:
@@ -467,6 +465,8 @@ class MultiModalSwinTransformer(nn.Module):
     def forward(self, x, l, l_mask):
         """Forward function."""
         x = self.patch_embed(x)
+        #x2 = self.patch_embed(x2)
+        #x = x + x2
 
         Wh, Ww = x.size(2), x.size(3)
         if self.ape:
@@ -558,6 +558,9 @@ class MMBasicLayer(nn.Module):
             self.downsample = downsample(dim=dim, norm_layer=norm_layer)
         else:
             self.downsample = None
+        # initialize the gate to 0
+        nn.init.zeros_(self.res_gate[0].weight)
+        nn.init.zeros_(self.res_gate[2].weight)
 
     def forward(self, x, H, W, l, l_mask):
         """ Forward function.
