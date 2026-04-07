@@ -71,6 +71,13 @@ $DATA_PATH
         ├── JPEGImages
         ├── ann_split
 
+├── RefSegRS
+│   ├── images
+│   ├── masks
+    └── output_phrase_test.txt
+    └── output_phrase_train.txt
+    └── output_phrase_val.txt
+
 ```
    
 ## Training
