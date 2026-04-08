@@ -131,6 +131,7 @@ checkpoints/
 sam3_logs/
 
 # Data files
+assets/
 *.h5
 *.hdf5
 *.pkl
@@ -152,3 +153,6 @@ Thumbs.db
 *.bpe
 *.vocab
 wandb/
+
+
+*.ipynb
