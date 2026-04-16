@@ -8,7 +8,7 @@ def get_parser():
                         help='if true, set amsgrad to True in an Adam or AdamW optimizer.')
     parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--bert_tokenizer', default='bert-base-uncased', help='BERT tokenizer')
-    parser.add_argument('--dataset', default='rrsisd', help='refcoco, refcoco+, refcocog, rrsisd, or refsegrs')
+    parser.add_argument('--dataset', default='RefSegRS', help='refcoco, refcoco+, refcocog, RRSISD, RefSegRS, or VaiRef')
     parser.add_argument('--ddp_trained_weights', action='store_true',
                         help='Only needs specified when testing,'
                              'whether the weights to be loaded are from a DDP-trained model')
@@ -23,7 +23,7 @@ def get_parser():
     parser.add_argument('--mha', default='', help='If specified, should be in the format of a-b-c-d, e.g., 4-4-4-4,'
                                                   'where a, b, c, and d refer to the numbers of heads in stage-1,'
                                                   'stage-2, stage-3, and stage-4 PWAMs')
-    parser.add_argument('--model', default='lavt_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis'], \
+    parser.add_argument('--model', default='lavt_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis', 'rrsis_one'], \
                         help='model to train or test')
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')
@@ -50,8 +50,9 @@ def get_parser():
     #                     help='resume from checkpoint')
     parser.add_argument('--resume', default='', \
                         help='resume from checkpoint')
+    parser.add_argument('--refer_data_root', default='', help='REFER dataset root directory')
     # parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
-    parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RefSegRS/', help='REFER dataset root directory')
+    # parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RefSegRS/', help='REFER dataset root directory')
     return parser
 
 if __name__ == "__main__":

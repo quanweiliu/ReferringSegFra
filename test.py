@@ -1,3 +1,7 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, [1]))
+print('using GPU %s' % ','.join(map(str, [1])))
+
 import torch
 from torch.utils import data
 import logging
@@ -11,10 +15,12 @@ from args import get_parser
 
 
 def get_dataset(image_set, transform, args):
-    if args.dataset == 'rrsisd':
+    if args.dataset == 'RRSISD':
         from dataset.dataset_refer_bert import ReferDataset
-    elif args.dataset == 'refsegrs':
-        from dataset.newdataset_refer_bert import ReferDataset
+    elif args.dataset == 'RefSegRS':
+        from dataset.RefSegRS_refer_bert import ReferDataset
+    elif args.dataset == 'VaiRef':
+        from dataset.ISPRS_refer_bert import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -151,18 +157,20 @@ def main(args):
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
-    args.dataset = 'refsegrs' # or rrsisd / refsegrs
+    args.dataset = 'rrsisd' # or rrsisd / refsegrs
 
-    args.model = 'rmsin'
+    # args.model = 'rmsin'
     # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0324-1831-rmsin/model_best_rmsin.pth'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
-    args.model = 'lavt_one'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
+    # args.model = 'lavt_one'
     # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/0326-0951-lavt_one/model_best_lavt_one.pth'
-    args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
-    # args.model = 'lavt'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/LAVT/model_best_lavt.pth'
+    # args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
+    args.model = 'lavt'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/LAVT/model_best_lavt.pth'
     args.model = 'rrsis'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis/model_best_rrsis.pth'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis/model_best_rrsis.pth'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis/model_last_rrsis.pth'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis/model_best_rrsis.pth'
     print('Weights: {}'.format(args.resume))
     # print('Image size: {}'.format(str(args.img_size)))
 
