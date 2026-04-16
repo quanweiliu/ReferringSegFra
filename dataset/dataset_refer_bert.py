@@ -32,6 +32,7 @@ def add_random_boxes(img, min_num=20, max_num=60, size=32):
     img = Image.fromarray(img.astype('uint8'), 'RGB')
     return img
 
+refer_data_root = "/home/icclab/Documents/lqw/DatasetMMF/RRSISD/"
 
 class ReferDataset(data.Dataset):
 
@@ -46,7 +47,7 @@ class ReferDataset(data.Dataset):
         self.image_transforms = image_transforms
         self.target_transform = target_transforms
         self.split = split
-        self.refer = REFER(args.refer_data_root, args.dataset, args.splitBy)
+        self.refer = REFER(refer_data_root, args.dataset, args.splitBy)
 
         self.max_tokens = 20
 

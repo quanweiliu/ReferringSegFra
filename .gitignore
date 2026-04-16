@@ -156,3 +156,4 @@ wandb/
 
 
 *.ipynb
+generate_text.py

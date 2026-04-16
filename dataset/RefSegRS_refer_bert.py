@@ -6,7 +6,6 @@ from torch.autograd import Variable
 import numpy as np
 import cv2
 from PIL import Image
-# import torchvision.transforms.functional as TF
 from bert.tokenization_bert import BertTokenizer
 
 # import h5py
@@ -152,22 +151,22 @@ class ReferDataset(data.Dataset):
 
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     # Dataset configuration initialization
-#     parser = get_parser()
-#     args = parser.parse_args()
-#     transform = transforms.get_transform(args=args)
+    # Dataset configuration initialization
+    parser = get_parser()
+    args = parser.parse_args()
+    transform = transforms.get_transform(args=args)
 
-#     dataset = ReferDataset(args, split='train', image_transforms=transform, eval_mode=False)
-#     # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
-#     print(len(dataset))  # 12181 / 1740  / 3481
-#     for i in range(100):
-#         img, target, tensor_embeddings, attention_mask = dataset[i]
+    dataset = ReferDataset(args, split='train', image_transforms=transform, eval_mode=False)
+    # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
+    print(len(dataset))  # 12181 / 1740  / 3481
+    for i in range(100):
+        img, target, tensor_embeddings, attention_mask = dataset[i]
 
-#         # train [3, 480, 480] [480, 480] [1, 20] [1, 20]
-#         # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
-#         print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
+        # train [3, 480, 480] [480, 480] [1, 20] [1, 20]
+        # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
+        print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
 
 
 

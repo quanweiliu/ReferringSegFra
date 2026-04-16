@@ -1,4 +1,7 @@
 import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, [1]))
+# print('using GPU %s' % ','.join(map(str, [1])))
+
 os.environ['WANDB_API_KEY'] = 'd14367a70fe99f6d07256b084fcc49cf17bb01f4'
 
 import time
@@ -15,7 +18,8 @@ import operator
 from functools import reduce
 # from email import header
 from bert.modeling_bert import BertModel
-from dataset.dataset_refer_bert import ReferDataset
+# from dataset.dataset_refer_bert import ReferDataset
+# from dataset.RefSegRS_refer_bert import ReferDataset
 from utils.loss import MixLoss
 from utils import tools, evaluation
 from utils import transforms
@@ -23,6 +27,14 @@ from args import get_parser
 
 
 def get_dataset(image_set, transform, args):
+    print("dataset"*10, args.dataset)
+
+    if args.dataset == 'RRSISD':
+        from dataset.dataset_refer_bert import ReferDataset
+    elif args.dataset == 'RefSegRS':
+        from dataset.RefSegRS_refer_bert import ReferDataset
+    elif args.dataset == 'VaiRef':
+        from dataset.ISPRS_refer_bert import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -128,7 +140,7 @@ def main(args):
         #                                       args=args)
         model = getattr(rmsin_seg, args.model)(pretrained=args.pretrained_swin_weights, 
                                                args=args)
-    elif args.model == 'rrsis':
+    elif args.model == 'rrsis' or args.model == 'rrsis_one':
         from lib.RRSIS import segmentation as rrsis_seg
         # model = rrsis_seg.__dict__[args.model](pretrained=args.pretrained_swin_weights, 
         #                                       args=args)
@@ -144,7 +156,7 @@ def main(args):
 
     # print(model)
     # if args.model != 'lavt_one' and args.model != 'rmsin':
-    if args.model == 'lavt':
+    if args.model == 'lavt' or args.model == 'rrsis':
         bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
         bert_model.cuda()
@@ -160,7 +172,7 @@ def main(args):
         print('Resuming training from checkpoint: {}'.format(args.resume))
         checkpoint = torch.load(args.resume, map_location='cpu', weights_only=False)
         pure_model.load_state_dict(checkpoint['model'], strict=False)
-        if args.model == 'lavt':
+        if args.model == 'lavt' or args.model == 'rrsis':
             pure_bert_model.load_state_dict(checkpoint['bert_model'])
             print('Successfully loaded model and bert weights from checkpoint: {}'.format(args.resume))
 
@@ -174,7 +186,7 @@ def main(args):
             backbone_decay.append(m)
 
     # if args.model != 'lavt_one' and args.model != 'rmsin':
-    if args.model == 'lavt':
+    if args.model == 'lavt' or args.model == 'rrsis':
         params_to_optimize = [
             {'params': backbone_no_decay, 'weight_decay': 0.0},
             {'params': backbone_decay},
@@ -280,7 +292,7 @@ if __name__ == "__main__":
 
     # create rundir and copy args file
     run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model
-    args.output_dir = os.path.join(args.output_dir, "RRSISD_" + str(run_id))
+    args.output_dir = os.path.join(args.output_dir, args.dataset + "_" + str(run_id))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     with open(os.path.join(args.output_dir, 'args.json'), 'w') as fid:
