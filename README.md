@@ -37,7 +37,7 @@ It is cloned from [refer](https://github.com/lichengunc/refer).
 functions for `DistributedDataParallel`.
 
 
-## Setting Up
+## Setting Up and Usage
 
 
 Weights are needed for training to initialize the model.
@@ -47,20 +47,8 @@ and put the `pth` file in `./swin`.
 2. Download [bert weights](https://huggingface.co/google-bert/bert-base-uncased/tree/main),**config.json, pytorch_model.bin, tokenizer_config.json, vocab.txt** 
 and put these files in `./bert-base-uncased`.
 
-Path are needed for datasets load and weights save. In the args.py file, revise the following path:
-1. ck_bert: bert weights
-2. pretrained_swin_weights: swin transformer weights
-3. refer_data_root: dataset path
-4. output-dir: output weights path
-5. resume: resume weights path
-
-
-## Datasets
-- RRSIS-D: It can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1Xqi3Am2Vgm4a5tHqiV9tfaqKNovcuK3A?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1yZatV2w_bSXIP9QBv2lCrA?pwd=sjoe) (access code: sjoe).
-
-### Usage
-1. Download our dataset.
-2. Copy all the downloaded files to `./data/`. The dataset folder should be like this:
+3. Download our dataset.
+4. Copy all the downloaded files to `./data/`. The dataset folder should be like this:
 ```
 $DATA_PATH
 ├── rrsisd
@@ -80,8 +68,19 @@ $DATA_PATH
 
 ```
 
-3. modify `args.py`. the key hyperparameters: dataset; mdoel; ck_bert; pretrained_swin_weights;output-dir; resume; refer_data_root; Becasue I fix the data root in `dataset`, you should go to `dataset_refer_bert.py`, `ISPRS_refer_bert.py` or `RefSegRS_refer_bert.py` to modify the dataset root.
-4. modify `./train_SG.py` or `./train.py` wandb api key, use your own wandb, if you don't wnat rely on wandb, you also can remove it.
+5. In the `args.py` file, revise the following path:
+    1. ck_bert: bert weights
+    2. pretrained_swin_weights: swin transformer weights
+    3. refer_data_root: dataset path
+    4. output-dir: output weights path
+    5. resume: resume weights path
+    Becasue I fix the data root in `dataset`, you should go to `dataset_refer_bert.py`, `ISPRS_refer_bert.py` or `RefSegRS_refer_bert.py` to modify the dataset root.
+
+6. Modify `./train.py` wandb api key, use your own wandb, if you don't wnat rely on wandb, you also can remove it.
+
+
+## Datasets
+- RRSIS-D: It can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1Xqi3Am2Vgm4a5tHqiV9tfaqKNovcuK3A?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1yZatV2w_bSXIP9QBv2lCrA?pwd=sjoe) (access code: sjoe).
 
 
 ## Dependency
