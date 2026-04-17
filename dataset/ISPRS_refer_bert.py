@@ -62,8 +62,8 @@ def build_rsris_batches(setname):
             if True:
                 im_name1 = os.path.join(im_dir1, image_name + '.tif')
                 seg = os.path.join(seg_label_dir, seg_label_name,  lsplit[0])
-                print("im_name1", im_name1)
-                print("seg", seg)
+                # print("im_name1", im_name1)
+                # print("seg", seg)
                 del(lsplit[0])
                 sentence = ' '.join(lsplit)
                 

@@ -4,7 +4,7 @@ from .mask_predictor import SimpleDecoding
 from .backbone import MultiModalSwinTransformer
 from ._utils import LAVT, LAVTOne
 
-__all__ = ['rrsis']
+__all__ = ['rrsis', 'rrsis_one']
 
 
 # LAVT

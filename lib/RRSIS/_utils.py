@@ -5,8 +5,20 @@ from torch import nn
 from torch.nn import functional as F
 from collections import OrderedDict
 from bert.modeling_bert import BertModel
-from einops import rearrange, repeat
 
+
+# def load_weights(model, load_path):
+#     dict_trained = torch.load(load_path)['model']
+#     dict_new = model.state_dict().copy()
+#     for key in dict_new.keys():
+#         if key in dict_trained.keys():
+#             dict_new[key] = dict_trained[key]
+#     model.load_state_dict(dict_new)
+#     del dict_new
+#     del dict_trained
+#     torch.cuda.empty_cache()
+#     print('load weights from {}'.format(load_path))
+#     return model
 
 
 def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=None):
@@ -56,7 +68,7 @@ class _LAVTSimpleDecode(nn.Module):
         input_shape = x.shape[-2:]
         features = self.backbone(x, l_feats, l_mask)
         x_c1, x_c2, x_c3, x_c4 = features
-        B = x.shape[0]
+        # B = x.shape[0]
         #gtoken = repeat(self.gtoken, '1 c d -> b c d', b = B)
         gtoken = l_feats
         x = self.classifier(x_c4, x_c3, x_c2, x_c1, gtoken)
@@ -92,7 +104,6 @@ class _LAVTOneSimpleDecode(nn.Module):
         x_c1, x_c2, x_c3, x_c4 = features
         x = self.classifier(x_c4, x_c3, x_c2, x_c1, l_feats)
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=True)
-
         return x
 
 

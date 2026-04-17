@@ -7,18 +7,18 @@ from collections import OrderedDict
 from bert.modeling_bert import BertModel
 
 
-def load_weights(model, load_path):
-    dict_trained = torch.load(load_path)['model']
-    dict_new = model.state_dict().copy()
-    for key in dict_new.keys():
-        if key in dict_trained.keys():
-            dict_new[key] = dict_trained[key]
-    model.load_state_dict(dict_new)
-    del dict_new
-    del dict_trained
-    torch.cuda.empty_cache()
-    print('load weights from {}'.format(load_path))
-    return model
+# def load_weights(model, load_path):
+#     dict_trained = torch.load(load_path)['model']
+#     dict_new = model.state_dict().copy()
+#     for key in dict_new.keys():
+#         if key in dict_trained.keys():
+#             dict_new[key] = dict_trained[key]
+#     model.load_state_dict(dict_new)
+#     del dict_new
+#     del dict_trained
+#     torch.cuda.empty_cache()
+#     print('load weights from {}'.format(load_path))
+#     return model
 
 
 def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=None):
@@ -100,7 +100,7 @@ class _LAVTOneSimpleDecode(nn.Module):
         # print("Language mask shape:", l_mask.shape)  # Debug: 打印语言掩码的形状  8, 20, 1
         features = self.backbone(x, l_feats, l_mask)
         # print("Backbone output feature shapes:", [f.shape for f in features])  # Debug: 打印 backbone 输出的特征图形状
-        x_c1, x_c2, x_c3, x_c4  = features   # e.g. x_c1:[B, 128, 120, 120], x_c2:[B, 256, 60, 60], x_c3:[B, 512, 30, 30], x_c4:[B, 1024, 15, 15]
+        x_c1, x_c2, x_c3, x_c4 = features   # e.g. x_c1:[B, 128, 120, 120], x_c2:[B, 256, 60, 60], x_c3:[B, 512, 30, 30], x_c4:[B, 1024, 15, 15]
         x = self.classifier(x_c4, x_c3, x_c2, x_c1)
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=True)
         return x
