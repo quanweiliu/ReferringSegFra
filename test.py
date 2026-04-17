@@ -16,7 +16,7 @@ from args import get_parser
 
 def get_dataset(image_set, transform, args):
 
-    if args.dataset == 'RRSISD':
+    if args.dataset == 'rrsisd':
         from dataset.dataset_refer_bert import ReferDataset
     elif args.dataset == 'RefSegRS':
         from dataset.RefSegRS_refer_bert import ReferDataset
@@ -162,33 +162,34 @@ def main(args):
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
-    args.dataset = 'RefSegRS' # or RRSISD / RefSegRS
+    args.dataset = 'rrsisd' # or rrsisd / RefSegRS / VaiRef
 
 
     args.model = 'rrsis_one'
     args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one/model_best_rrsis.pth'
-    args.model = 'rmsin'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
+    # args.model = 'rmsin'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
     args.model = 'lavt_one'
-    # args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
+    args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
     args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one/model_best_lavt_one.pth'
     args.model = 'lavt'
     args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1700-lavt/model_best_lavt.pth'
-    args.model = 'rrsis'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis/model_best_rrsis.pth'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1652-rrsis/model_best_rrsis.pth'
-
-
-
-    # args.model = 'rrsis_one'
-    # args.model = 'rmsin'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin/model_best_rmsin.pth'
-    # args.model = 'lavt_one'
-    # args.model = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one/model_best_lavt_one.pth'
-    # args.model = 'lavt'
     # args.model = 'rrsis'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis/model_best_rrsis.pth'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis/model_best_rrsis.pth'
+
+
+
     # args.model = 'rrsis_one'
+    args.model = 'rmsin'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin/model_best_rmsin.pth'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_RMSIN/model_best_RMSIN.pth'
+    # args.model = 'lavt_one'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one/model_best_lavt_one.pth'
+    # args.model = 'lavt'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT/model_best_lavt.pth'
+    # args.model = 'rrsis'
+    # args.model = 'rrsis_one'
+    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one/model_best_rrsis_one.pth'
     print('Weights: {}'.format(args.resume))
     # print('Image size: {}'.format(str(args.img_size)))
 
@@ -206,4 +207,4 @@ if __name__ == "__main__":
     main(args)
 
 
-# python test.py --swin_type base --dataset rrsisd --resume /home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RMSIN/model_best_RMSIN.pth --split val --workers 4 --window12 --img_size 480
+# python test.py 
