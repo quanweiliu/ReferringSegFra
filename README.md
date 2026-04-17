@@ -18,21 +18,21 @@ I ran the code to make sure the model achieve the little difference results comp
 ## Files
 Code in this repository is written using [PyTorch](https://pytorch.org/) and is organized in the following way (assuming the working directory is the root directory of this repository):
 * `./lib` contains files implementing the main network.
-* Inside `./lib`, `_utils.py` defines the highest-level model, which incorporates the backbone network
-defined in `backbone.py` and the simple mask decoder defined in `mask_predictor.py`.
-`segmentation.py` provides the model interface and initialization functions.
-* `./bert` contains files migrated from [Hugging Face Transformers v3.0.2](https://huggingface.co/transformers/v3.0.2/quicktour.html),
-which implement the BERT language model.
-We used Transformers v3.0.2 during development but it had a bug that would appear when using `DistributedDataParallel`.
-Therefore we maintain a copy of the relevant source files in this repository.
-This way, the bug is fixed and code in this repository is self-contained.
-* `./train.py` is invoked to train the model.
+    * Inside `./lib`, `_utils.py` defines the highest-level model, which incorporates the backbone network, defined in `backbone.py` and the simple mask decoder defined in `mask_predictor.py`. `segmentation.py` provides the model interface and initialization functions.
+* `./bert` contains files migrated from [Hugging Face Transformers v3.0.2](https://huggingface.co/transformers/v3.0.2/quicktour.html), which implement the BERT language model.
+We used Transformers v3.0.2 during development but it had a bug that would appear when using `DistributedDataParallel`. Therefore we maintain a copy of the relevant source files in this repository. This way, the bug is fixed and code in this repository is self-contained.
+* `./args.py` defines all of the hyper-parameters in the framework.
+* `./train.py` is invoked to train the model on multiple GPU.
 * `./test.py` is invoked to run inference on the evaluation subsets after training.
+* ` visulization_infer.py` is the result visulization tool.
 * `./refer` contains data pre-processing code and is also where data should be placed, including the images and all annotations.
 It is cloned from [refer](https://github.com/lichengunc/refer). 
-* `./data/dataset_refer_bert.py` is where the dataset class is defined.
-* `./utils.py` defines functions that track training statistics and setup
-* `./loss.py` defines loss functions
+* `./dataset` is where the dataset class is defined, which support mutliple data formats.
+* `./utils` defines functions that track training statistics and setup
+    * Inside `./patchify_ISPRS.py` defines how crop a full-size remote sensing image into traditional standard input.
+    * `./binary_mask.py` defines how to transfer the semantic segmentation mask into referring mask.
+    * `./generate_text.py` defines how to translate referring mask into text. 
+    * `./loss.py` defines loss functions
 
 functions for `DistributedDataParallel`.
 
@@ -60,7 +60,7 @@ Path are needed for datasets load and weights save. In the args.py file, revise 
 
 ### Usage
 1. Download our dataset.
-2. Copy all the downloaded files to `./refer/data/`. The dataset folder should be like this:
+2. Copy all the downloaded files to `./data/`. The dataset folder should be like this:
 ```
 $DATA_PATH
 ├── rrsisd
@@ -79,7 +79,19 @@ $DATA_PATH
     └── output_phrase_val.txt
 
 ```
-   
+
+3. modify `args.py`. the key hyperparameters: dataset; mdoel; ck_bert; pretrained_swin_weights;output-dir; resume; refer_data_root; Becasue I fix the data root in `dataset`, you should go to `dataset_refer_bert.py`, `ISPRS_refer_bert.py` or `RefSegRS_refer_bert.py` to modify the dataset root.
+4. modify `./train_SG.py` or `./train.py` wandb api key, use your own wandb, if you don't wnat rely on wandb, you also can remove it.
+
+
+## Dependency
+
+We test our code on the python 3.10 and pytorch 3.71. But we think it can be run in most of environments. Because we have removed most of the special dependencies.
+
+Other libraries
+- pip install notebook matplotlib pandas scikit-learn scikit-image spectral h5py tqdm seaborn
+- pip install tokenizers timm thop einops wandb
+
 ## Training
 We use DistributedDataParallel from PyTorch for training. To run on 4 GPUs (with IDs 0, 1, 2, and 3) on a single node:
 ```shell

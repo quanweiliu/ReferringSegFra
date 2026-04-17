@@ -1,6 +1,6 @@
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, [1]))
-# print('using GPU %s' % ','.join(map(str, [1])))
+os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, [1]))
+print('using GPU %s' % ','.join(map(str, [1])))
 
 os.environ['WANDB_API_KEY'] = 'd14367a70fe99f6d07256b084fcc49cf17bb01f4'
 
@@ -107,14 +107,15 @@ def main(args):
                                   args=args)
 
     # batch sampler
-    print(f"local rank {args.local_rank} / global rank {tools.get_rank()} successfully built train dataset.")
-    num_tasks = tools.get_world_size()
-    global_rank = tools.get_rank()
-    train_sampler = data.distributed.DistributedSampler(dataset, 
-                                                        num_replicas=num_tasks, 
-                                                        rank=global_rank,
-                                                        shuffle=True)
-    test_sampler = data.SequentialSampler(dataset_test)
+    # print(f"local rank {args.local_rank} / global rank {tools.get_rank()} successfully built train dataset.")
+    # num_tasks = tools.get_world_size()
+    # global_rank = tools.get_rank()
+    # train_sampler = data.distributed.DistributedSampler(dataset, 
+    #                                                     num_replicas=num_tasks, 
+    #                                                     rank=global_rank,
+    #                                                     shuffle=True)
+    train_sampler = data.RandomSampler(dataset)
+    # test_sampler = data.SequentialSampler(dataset_test)
 
     # data loader
     data_loader = data.DataLoader(
@@ -124,7 +125,7 @@ def main(args):
 
     data_loader_test = data.DataLoader(
                         dataset_test, batch_size=1, 
-                        sampler=test_sampler, num_workers=args.workers)
+                        sampler=None, num_workers=args.workers)
 
     # model initialization
     # print(args.model)
@@ -149,10 +150,11 @@ def main(args):
     else:
         assert False, 'Unknown model: {}'.format(args.model)
 
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model.cuda()
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
-    pure_model = model.module  # 剥离权重的 module，方便后续加载权重和保存权重
+    # model = nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], find_unused_parameters=True)
+    # pure_model = model.module  # 剥离权重的 module，方便后续加载权重和保存权重
+    pure_model = model  # 剥离权重的 module，方便后续加载权重和保存权重
 
     # print(model)
     # if args.model != 'lavt_one' and args.model != 'rmsin':
@@ -160,9 +162,10 @@ def main(args):
         bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
         bert_model.cuda()
-        bert_model = nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
-        bert_model = nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
-        pure_bert_model = bert_model.module
+        # bert_model = nn.SyncBatchNorm.convert_sync_batchnorm(bert_model)
+        # bert_model = nn.parallel.DistributedDataParallel(bert_model, device_ids=[args.local_rank])
+        # pure_bert_model = bert_model.module
+        pure_bert_model = bert_model
     else:
         bert_model = None
         pure_bert_model = None
@@ -316,10 +319,9 @@ if __name__ == "__main__":
     # logger = logging.getLogger()
 
     # set up distributed learning
-    tools.init_distributed_mode(args)
+    # tools.init_distributed_mode(args)
     print('Image size: {}'.format(str(args.img_size)))
     main(args)
 
 
 # CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train.py --img_size 480 
-# CUDA_VISIBLE_DEVICES=1 python -m torch.distributed.launch --nproc_per_node 1 --master_port 12345 train.py --img_size 480 
