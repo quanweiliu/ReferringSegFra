@@ -157,6 +157,7 @@ def main(args):
     else:
         bert_model = None
 
+    args.print_freq = 200
     evaluate(model, data_loader_test, bert_model, 
              logger=logging.getLogger("test"), args=args)
 
@@ -198,6 +199,8 @@ if __name__ == "__main__":
     model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-1842-lavt' 
     args.model = 'rmsin'
     model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2316-rmsin'
+    args.model = 'rrsis_one'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-1402-rrsis_one'
 
 
     # args.output_dir = os.path.split(model_path)[0]
