@@ -242,9 +242,11 @@ def main(args):
 
     for epoch in range(max(0, resume_epoch+1), args.epochs):
         data_loader.sampler.set_epoch(epoch)
+        args.print_freq = 50  # after debugging, we can set print_freq to a large value, e.g., 50, for clartiy and less noisy logs
         train_one_epoch(model, criterion, optimizer, data_loader, \
                         lr_scheduler, epoch, iterations, bert_model, \
                         metric_format, logger_train, args)
+        args.print_freq = 200
         iou, overallIoU = evaluation.evaluate(model, data_loader_test, bert_model, \
                                               criterion, tools.IoU, \
                                               metric_format, logger_val, args)

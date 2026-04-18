@@ -9,7 +9,7 @@ def get_parser():
     parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--bert_tokenizer', default='bert-base-uncased', help='BERT tokenizer')
     parser.add_argument('--dataset', default='VaiRef', help='refcoco, refcoco+, refcocog, rrsisd, RefSegRS, or VaiRef')
-    parser.add_argument('--VaiRef_version', default='standard', help='standard or complex version of the VaiRef dataset')
+    parser.add_argument('--VaiRef_version', default='complex', help='standard or complex version of the VaiRef dataset')
     parser.add_argument('--ddp_trained_weights', action='store_true',
                         help='Only needs specified when testing,'
                              'whether the weights to be loaded are from a DDP-trained model')
@@ -28,7 +28,7 @@ def get_parser():
                         help='model to train or test')
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')
-    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
+    parser.add_argument('--print-freq', default=50, type=int, help='print frequency')
     parser.add_argument('--split', default='test', help='only used when testing')
     parser.add_argument('--splitBy', default='unc', help='change to umd or google when the datasset is G-Ref (RefCOCOg)')
     parser.add_argument('--swin_type', default='base',
