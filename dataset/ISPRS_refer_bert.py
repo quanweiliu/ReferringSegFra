@@ -36,9 +36,11 @@ def build_rsris_batches(setname):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
-        setfile = 'output_phrase_train_standard.txt'
+        # setfile = 'output_phrase_train_standard.txt'
+        setfile = 'output_phrase_train_complex.txt'
     if setname == 'val':
-        setfile = 'output_phrase_val_standard.txt'
+        # setfile = 'output_phrase_val_standard.txt'
+        setfile = 'output_phrase_val_complex.txt'
     if setname == 'test':
         setfile = 'output_phrase_test.txt'
 

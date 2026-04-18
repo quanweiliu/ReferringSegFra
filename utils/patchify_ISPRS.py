@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_format', choices=['png', 'tif', 'jpg'], default='tif')
     opt = parser.parse_args()
 
-    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix='train_')
+    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix='test_')
 
 
 
@@ -76,8 +76,8 @@ if __name__ == '__main__':
 
 
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/test_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen/test/DSM256 --patch_size 480 --stride 240
-# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/test_imagesCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen/test/images256 --patch_size 480 --stride 240
-# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/test_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen/test/masks256 --patch_size 480 --stride 240
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/test_imagesCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/images --patch_size 480 --stride 240
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/test_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/masks --patch_size 480 --stride 240
 
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/Train_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen/train/DSM256 --patch_size 480 --stride 240
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Vaihingen_Orgin/train_imagesCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/temp/images --patch_size 480 --stride 240

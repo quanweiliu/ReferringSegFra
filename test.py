@@ -162,7 +162,7 @@ def main(args):
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
-    args.dataset = 'rrsisd' # or rrsisd / RefSegRS / VaiRef
+    args.dataset = 'VaiRef' # or rrsisd / RefSegRS / VaiRef
 
 
     args.model = 'rrsis_one'
@@ -190,6 +190,12 @@ if __name__ == "__main__":
     # args.model = 'rrsis'
     # args.model = 'rrsis_one'
     # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one/model_best_rrsis_one.pth'
+
+    # args.model = 'lavt'
+    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt/model_best_lavt.pth'
+
+
+
     print('Weights: {}'.format(args.resume))
     # print('Image size: {}'.format(str(args.img_size)))
 
