@@ -32,17 +32,25 @@ suffix = {
 reverse_suffix = {v: k for k, v in suffix.items()}
 
 
-def build_rsris_batches(setname):
+def build_rsris_batches(setname, args):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
-        # setfile = 'output_phrase_train_standard.txt'
-        setfile = 'output_phrase_train_complex.txt'
+        if args.VaiRef_version == 'standard':
+            setfile = 'output_phrase_train_standard.txt'
+        elif args.VaiRef_version == 'complex': 
+            setfile = 'output_phrase_train_complex.txt'
     if setname == 'val':
-        # setfile = 'output_phrase_val_standard.txt'
-        setfile = 'output_phrase_val_complex.txt'
+        if args.VaiRef_version == 'standard':
+            setfile = 'output_phrase_val_standard.txt'
+        elif args.VaiRef_version == 'complex':
+            setfile = 'output_phrase_val_complex.txt'
     if setname == 'test':
-        setfile = 'output_phrase_test.txt'
+        if args.VaiRef_version == 'standard':
+            setfile = 'output_phrase_test_standard.txt'
+        elif args.VaiRef_version == 'complex':
+            setfile = 'output_phrase_test_complex.txt'
+
 
     tf = f'{data_root}/' + setfile
     all_imgs1 = []
@@ -93,7 +101,7 @@ class ReferDataset(data.Dataset):
         self.split = split
         self.max_tokens = 20
 
-        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split)
+        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split, args)
         self.sentences = all_sentences
         self.imgs1 = all_imgs1
         self.labels = all_labels

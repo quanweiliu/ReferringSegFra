@@ -4,6 +4,8 @@ print('using GPU %s' % ','.join(map(str, [1])))
 
 import torch
 from torch.utils import data
+import json
+from argparse import Namespace
 import logging
 import numpy as np
 from bert.modeling_bert import BertModel
@@ -162,54 +164,62 @@ def main(args):
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
-    args.dataset = 'VaiRef' # or rrsisd / RefSegRS / VaiRef
-
+    # args.dataset = 'VaiRef' # or rrsisd / RefSegRS / VaiRef
 
     args.model = 'rrsis_one'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one/model_best_rrsis.pth'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one'
     # args.model = 'rmsin'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin/model_best_rmsin.pth'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin'
     args.model = 'lavt_one'
-    args.resume = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one/model_best_lavt_one.pth"
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one/model_best_lavt_one.pth'
+    model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one"
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one'
     args.model = 'lavt'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1700-lavt/model_best_lavt.pth'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1700-lavt'
     # args.model = 'rrsis'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis/model_best_rrsis.pth'
-
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis'
 
 
     # args.model = 'rrsis_one'
     args.model = 'rmsin'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin/model_best_rmsin.pth'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_RMSIN/model_best_RMSIN.pth'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_RMSIN/'
     # args.model = 'lavt_one'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one/model_best_lavt_one.pth'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one'
     # args.model = 'lavt'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT/model_best_lavt.pth'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT'
     # args.model = 'rrsis'
     # args.model = 'rrsis_one'
-    # args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one/model_best_rrsis_one.pth'
-
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one'
     # args.model = 'lavt'
-    args.resume = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt/model_best_lavt.pth'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt'
 
 
+    args.model = 'lavt'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-1842-lavt' 
+    args.model = 'rmsin'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2316-rmsin'
 
-    print('Weights: {}'.format(args.resume))
-    # print('Image size: {}'.format(str(args.img_size)))
 
-
-    args.output_dir = os.path.split(args.resume)[0]
+    # args.output_dir = os.path.split(model_path)[0]
+    with open(os.path.join(model_path, 'args.json'), 'r') as f:
+        arguments = json.load(f)
+    args = Namespace(**arguments)
+    args.resume = os.path.join(model_path, 'model_best_' + args.model + '.pth')
+    args.VaiRef_version = 'standard' # or standard
     # logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') 输出模式
     logging.basicConfig(level=logging.INFO, \
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \
                         datefmt="%Y-%m-%d %H:%M:%S", \
                         handlers=[
-                            logging.FileHandler(os.path.join(args.output_dir, "results.log"), mode="a"),  # 用于文件保存
+                            logging.FileHandler(os.path.join(model_path, "results.log"), mode="a"),  # 用于文件保存
                             logging.StreamHandler()   # 用于在 terminal 中的文件打印
                         ],
                         )
+
+    print('Weights: {}'.format(args.resume))
+    # print('Image size: {}'.format(str(args.img_size)))
+
+
     main(args)
 
 
