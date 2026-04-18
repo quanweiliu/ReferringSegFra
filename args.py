@@ -24,7 +24,7 @@ def get_parser():
     parser.add_argument('--mha', default='', help='If specified, should be in the format of a-b-c-d, e.g., 4-4-4-4,'
                                                   'where a, b, c, and d refer to the numbers of heads in stage-1,'
                                                   'stage-2, stage-3, and stage-4 PWAMs')
-    parser.add_argument('--model', default='rrsis_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis', 'rrsis_one'], \
+    parser.add_argument('--model', default='lavt_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis', 'rrsis_one'], \
                         help='model to train or test')
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')

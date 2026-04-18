@@ -246,7 +246,7 @@ def main(args):
         train_one_epoch(model, criterion, optimizer, data_loader, \
                         lr_scheduler, epoch, iterations, bert_model, \
                         metric_format, logger_train, args)
-        args.print_freq = 200
+        args.print_freq = 400
         iou, overallIoU = evaluation.evaluate(model, data_loader_test, bert_model, \
                                               criterion, tools.IoU, \
                                               metric_format, logger_val, args)

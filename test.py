@@ -157,7 +157,7 @@ def main(args):
     else:
         bert_model = None
 
-    args.print_freq = 200
+    args.print_freq = 1000
     evaluate(model, data_loader_test, bert_model, 
              logger=logging.getLogger("test"), args=args)
 
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         arguments = json.load(f)
     args = Namespace(**arguments)
     args.resume = os.path.join(model_path, 'model_best_' + args.model + '.pth')
-    args.VaiRef_version = 'standard' # or standard
+    args.VaiRef_version = 'complex' # standard or complex
     # logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') 输出模式
     logging.basicConfig(level=logging.INFO, \
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \

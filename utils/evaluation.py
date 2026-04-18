@@ -8,7 +8,7 @@ import numpy as np
 
 def evaluate(model, data_loader, bert_model, criterion, IoU, metric_format, logger, args):
     model.eval()
-    header = "Test: "
+    header = "Val: "
     wrapper_data = metric_format.log_every(data_loader, header, logger, args)
     total_its = 0
     acc_ious = 0
@@ -72,5 +72,6 @@ def evaluate(model, data_loader, bert_model, criterion, IoU, metric_format, logg
             "val oiou": cum_I * 100. / cum_U,
             "val Loss": total_loss / total_its})
 
-    logger.info(results_str)
+    if args.local_rank == 0:
+        logger.info(results_str)
     return 100 * iou, 100 * cum_I / cum_U
