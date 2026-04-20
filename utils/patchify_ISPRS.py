@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_format', choices=['png', 'tif', 'jpg'], default='tif')
     opt = parser.parse_args()
 
-    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix='test_')
+    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix='val_')
 
 
 

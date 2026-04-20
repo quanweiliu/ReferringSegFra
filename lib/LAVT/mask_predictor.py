@@ -68,5 +68,6 @@ class SimpleDecoding(nn.Module):
         x = self.conv2_2(x)
         x = self.bn2_2(x)
         x = self.relu2_2(x)
+        # print("x shape before final conv:", x.shape)  # Debug: 打印 x 的形状
 
         return self.conv1_1(x)

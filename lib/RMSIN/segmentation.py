@@ -116,7 +116,7 @@ def _segm_rmsin_one(pretrained, args):
                                          ape=False, drop_path_rate=0.3, patch_norm=True,
                                          out_indices=out_indices,
                                          use_checkpoint=False, num_heads_fusion=mha,
-                                         fusion_drop=args.fusion_drop,
+                                         fusion_drop=args.fusion_drop
                                          )
     if pretrained:
         print('Initializing Multi-modal Swin Transformer weights from ' + pretrained)

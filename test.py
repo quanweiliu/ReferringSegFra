@@ -188,19 +188,23 @@ if __name__ == "__main__":
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one'
     # args.model = 'lavt'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT'
-    # args.model = 'rrsis'
+    args.model = 'rrsis'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0419-1726-rrsis'
     # args.model = 'rrsis_one'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one'
     # args.model = 'lavt'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt'
 
 
-    args.model = 'lavt'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-1842-lavt' 
-    args.model = 'rmsin'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2316-rmsin'
-    args.model = 'rrsis_one'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-1402-rrsis_one'
+    # args.model = 'lavt'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-1842-lavt' 
+    # args.model = 'lavt_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-2304-lavt_one' 
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0419-0945-lavt_one'
+    # args.model = 'rmsin'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2316-rmsin'
+    # args.model = 'rrsis_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-1402-rrsis_one'
 
 
     # args.output_dir = os.path.split(model_path)[0]

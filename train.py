@@ -29,7 +29,7 @@ from args import get_parser
 def get_dataset(image_set, transform, args):
     print("dataset"*10, args.dataset)
 
-    if args.dataset == 'RRSISD':
+    if args.dataset == 'rrsisd':
         from dataset.dataset_refer_bert import ReferDataset
     elif args.dataset == 'RefSegRS':
         from dataset.RefSegRS_refer_bert import ReferDataset
@@ -155,7 +155,6 @@ def main(args):
     pure_model = model.module  # 剥离权重的 module，方便后续加载权重和保存权重
 
     # print(model)
-    # if args.model != 'lavt_one' and args.model != 'rmsin':
     if args.model == 'lavt' or args.model == 'rrsis':
         bert_model = BertModel.from_pretrained(args.ck_bert)
         bert_model.pooler = None  # a work-around for a bug in Transformers = 3.0.2 that appears for DistributedDataParallel
@@ -242,7 +241,7 @@ def main(args):
 
     for epoch in range(max(0, resume_epoch+1), args.epochs):
         data_loader.sampler.set_epoch(epoch)
-        args.print_freq = 50  # after debugging, we can set print_freq to a large value, e.g., 50, for clartiy and less noisy logs
+        args.print_freq = 200  # after debugging, we can set print_freq to a large value, e.g., 50, for clartiy and less noisy logs
         train_one_epoch(model, criterion, optimizer, data_loader, \
                         lr_scheduler, epoch, iterations, bert_model, \
                         metric_format, logger_train, args)
@@ -299,6 +298,7 @@ if __name__ == "__main__":
         os.mkdir(args.output_dir)
     with open(os.path.join(args.output_dir, 'args.json'), 'w') as fid:
         json.dump(args.__dict__, fid, indent=2)
+    print("args.output_dir", args.output_dir)
     
     logging.basicConfig(level=logging.INFO, \
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \
