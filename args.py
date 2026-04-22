@@ -8,7 +8,7 @@ def get_parser():
                         help='if true, set amsgrad to True in an Adam or AdamW optimizer.')
     parser.add_argument('-b', '--batch-size', default=4, type=int)
     parser.add_argument('--bert_tokenizer', default='bert-base-uncased', help='BERT tokenizer')
-    parser.add_argument('--dataset', default='rrsisd', help='refcoco, refcoco+, refcocog, rrsisd, RefSegRS, or VaiRef')
+    parser.add_argument('--dataset', default='RefSegRS', help='refcoco, refcoco+, refcocog, rrsisd, RefSegRS, or VaiRef')
     parser.add_argument('--VaiRef_version', default='complex', help='standard or complex version of the VaiRef dataset')
     parser.add_argument('--ddp_trained_weights', action='store_true',
                         help='Only needs specified when testing,'

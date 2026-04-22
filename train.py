@@ -34,7 +34,9 @@ def get_dataset(image_set, transform, args):
     elif args.dataset == 'RefSegRS':
         from dataset.RefSegRS_refer_bert import ReferDataset
     elif args.dataset == 'VaiRef':
-        from dataset.ISPRS_refer_bert import ReferDataset
+        from dataset.ISPRS_VaiRef import ReferDataset
+    elif args.dataset == 'PotsRef':
+        from dataset.ISPRS_PotsRef import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,

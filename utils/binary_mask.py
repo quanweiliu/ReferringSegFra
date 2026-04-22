@@ -582,18 +582,18 @@ def prepare_gemini_inputs(input_json_path, output_root):
 
 
 # 提取二值 Mask
-extract_binary_masks('/home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/masks', \
-                     '/home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/temp')
+# extract_binary_masks('/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/masks', \
+#                      '/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef')
 
 
 # # 加厚加厚的脚本
-# enrich_metadata('/home/icclab/Documents/lqw/DatasetMMF/temp/binary_masks', \
-#                    '/home/icclab/Documents/lqw/DatasetMMF/temp')
+enrich_metadata('/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/binary_masks', \
+                   '/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef')
 
 
 # # 运行属性映射与预处理脚本
-# prepare_gemini_inputs('/home/icclab/Documents/lqw/DatasetMMF/temp/enriched_metadata.json', \
-#                    '/home/icclab/Documents/lqw/DatasetMMF/temp')
+prepare_gemini_inputs('/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/enriched_metadata.json', \
+                   '/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef')
 
 
 # 特殊关注的 mask： val_95 / val_212  / val_364

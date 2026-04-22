@@ -113,17 +113,17 @@ if __name__ == '__main__':
 
 
 
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/test/DSM256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/test/masks256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_RGBCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/test/images256 --patch_size 512 --stride 400
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/test/DSM256 --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/masks --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/test_IRRG --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/images --patch_size 864 --stride 432
 
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/train/DSM256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/train/masks256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_RGBCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/train/images256 --patch_size 512 --stride 400
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/train/DSM256 --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/masks --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/train_IRRG --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/images --patch_size 864 --stride 432
 
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/val/DSM256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/val/masks256 --patch_size 512 --stride 400
-# python patchify.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_RGBCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/val/images256 --patch_size 512 --stride 400
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/val/DSM256 --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/masks --patch_size 864 --stride 432
+# python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_IRRG --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/images --patch_size 864 --stride 432
 
 
 

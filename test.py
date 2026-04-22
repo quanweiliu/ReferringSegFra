@@ -17,13 +17,16 @@ from args import get_parser
 
 
 def get_dataset(image_set, transform, args):
+    print("dataset"*10, args.dataset)
 
     if args.dataset == 'rrsisd':
         from dataset.dataset_refer_bert import ReferDataset
     elif args.dataset == 'RefSegRS':
         from dataset.RefSegRS_refer_bert import ReferDataset
     elif args.dataset == 'VaiRef':
-        from dataset.ISPRS_refer_bert import ReferDataset
+        from dataset.ISPRS_VaiRef import ReferDataset
+    elif args.dataset == 'PotsRef':
+        from dataset.ISPRS_PotsRef import ReferDataset
     ds = ReferDataset(args,
                       split=image_set,
                       image_transforms=transform,
@@ -99,13 +102,15 @@ def evaluate(model, data_loader, bert_model, logger, args):
                        (str(eval_seg_iou_list[n_eval_iou]), \
                         seg_correct[n_eval_iou] * 100. / seg_total)
     results_str += '    overall IoU = %.2f\n' % (cum_I * 100. / cum_U)
-    print(results_str)
+    # print(results_str)
     logger.info(results_str)
 
 
 def main(args):
     # device = torch.device(args.device)
-    dataset_test, _ = get_dataset(args.split, 
+    dataset_test, _ = get_dataset(
+                                  args.split, 
+                                #   'val',
                                   transforms.get_transform(args=args), 
                                   args)
 
@@ -167,29 +172,31 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # args.dataset = 'VaiRef' # or rrsisd / RefSegRS / VaiRef
 
-    args.model = 'rrsis_one'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one'
-    # args.model = 'rmsin'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1454-rmsin'
-    args.model = 'lavt_one'
-    model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one"
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one'
-    args.model = 'lavt'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1700-lavt'
+    # args.model = 'rrsis_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one'
+    args.model = 'rmsin'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0422-1054-rmsin'
+    # args.model = 'lavt_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one"
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0421-2353-lavt_one'
+    # args.model = 'lavt'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1700-lavt'
     # args.model = 'rrsis'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis'
 
 
     # args.model = 'rrsis_one'
-    args.model = 'rmsin'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0421-0851-lavt_one'
+    # args.model = 'rmsin'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_RMSIN/'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0420-1257-rmsin'
     # args.model = 'lavt_one'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one'
     # args.model = 'lavt'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT'
-    args.model = 'rrsis'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0419-1726-rrsis'
+    # args.model = 'rrsis'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0419-1726-rrsis'
     # args.model = 'rrsis_one'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one'
     # args.model = 'lavt'
@@ -213,6 +220,9 @@ if __name__ == "__main__":
     args = Namespace(**arguments)
     args.resume = os.path.join(model_path, 'model_best_' + args.model + '.pth')
     args.VaiRef_version = 'complex' # standard or complex
+    # args.dataset = 'VaiRef'
+    # args.dataset = 'PotsRef'
+    args.split = 'test'
     # logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') 输出模式
     logging.basicConfig(level=logging.INFO, \
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \
