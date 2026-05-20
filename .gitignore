@@ -128,6 +128,12 @@ dmypy.json
 weights/
 pretrained_weights/
 checkpoints/
+checkpoints_old/
+checkpoints_simple/
+checkpoints_complex/
+checkpoints_concept/
+checkpoints_standard/
+checkpoints_ssv_concept/
 sam3_logs/
 
 # Data files
@@ -156,4 +162,5 @@ wandb/
 
 
 *.ipynb
-generate_text.py
+generate_sta_complex.py
+generate_simple_concept.py

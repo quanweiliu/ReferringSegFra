@@ -38,7 +38,9 @@ def IoU(pred, gt):
 
 
 def computeIoU(pred_seg, gd_seg):
+    # 交集
     I = np.sum(np.logical_and(pred_seg, gd_seg))
+    # 并集
     U = np.sum(np.logical_or(pred_seg, gd_seg))
 
     return I, U

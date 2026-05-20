@@ -6,7 +6,7 @@ import os
 import json
 import rasterio
 from tqdm import tqdm
-
+import random
 
 # 定义类别和对应的 BGR 颜色 
 color_map = {
@@ -216,58 +216,29 @@ def get_natural_name(cls_name, m, all_m):
     # 统一边缘判定阈值，并且只要触碰任一边就认为是被截断的
     is_trunc = b[0] <= 0.01 or b[1] <= 0.01 or b[2] >= 0.99 or b[3] >= 0.99
 
-
+    val = random.random()
     # --- 1. 不透水面 (Impervious Surface) ---
     if cls_name == "Impervious_surface":
-        has_cars = "Car" in all_m
-
-        # --- 逻辑 1：细长形状 (Street 优先) ---
-        if asp > 2.2 or (asp > 1.8 and is_trunc):
-            # asp 每增加 1 奖励 0.05，最高到 0.95
-            conf = min(0.85 + (asp - 2.2) * 0.03, 0.98)
-            if has_cars:
-                # 这种描述在 RRSIS 中非常受欢迎，因为它同时描述了两个类别
-                return "street with parked vehicles", conf
-            return "street", conf
-
-        # --- 逻辑 2：块状形状 (可能是停车场或硬地) ---
-        if r > 0.2 and r < 0.5 and sol < 0.7:
-            return "road intersection", 0.90
-
-        # if r >= 0.5:
-        #     return "paved plaza", 0.90
-                    
-        # 兜底：铺装地面
-        return "paved surface", 0.85
+        return "Paved surface", 0.99
 
     # --- 2. 建筑 (Vaihingen 核心地物) ---
     if cls_name == "Building":
-        if r > 0.40 and sol > 0.85:
-            conf = 0.95 if sol > 0.92 else 0.90
-            if is_trunc:
-                return "section of a large building", conf
-            return "large building", conf
-        elif count > 1 and sol < 0.7: # 多个建筑且分布不紧凑
-            return "cluster of buildings", 0.85
-        else:
-            return "detached house", 0.95
+        if val >= 0.5:
+            return "House", 0.95
+        return "Building", 0.95
 
     if cls_name == "LowVeg":
-        if "Building" in all_m:
-            return "lawn", 0.90
-        return "grassy field", 0.95
+        if val >= 0.5:
+            return "Grass", 0.95
+        return "Lawn", 0.90
 
     if cls_name == "Tree":
-        if r > 0.12:
-            return "wooded patch", 0.90
-        return "trees", 0.99
+        return "Trees", 0.99
     
     if cls_name == "Car": 
-        if count >= 10:
-            return "cars in the parking lot", 0.95
-        if count >= 8:
-            return "cars in the roadside parking", 0.85
-        return "vehicle", 0.95
+        if val >= 0.5:
+            return "Car", 0.85
+        return "Vehicle", 0.95
     
     return cls_name.lower(), 0.5
 

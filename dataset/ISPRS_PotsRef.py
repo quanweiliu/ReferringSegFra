@@ -36,17 +36,29 @@ def build_rsris_batches(setname, args):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
-        if args.VaiRef_version == 'standard':
+        if args.VaiRef_version == 'concept':
+            setfile = 'output_phrase_train_concept.txt'
+        elif args.VaiRef_version == 'simple':
+            setfile = 'output_phrase_train_simple.txt'
+        elif args.VaiRef_version == 'standard':
             setfile = 'output_phrase_train_standard.txt'
         elif args.VaiRef_version == 'complex': 
             setfile = 'output_phrase_train_complex.txt'
     if setname == 'val':
-        if args.VaiRef_version == 'standard':
+        if args.VaiRef_version == 'concept':
+            setfile = 'output_phrase_val_concept.txt'
+        elif args.VaiRef_version == 'simple':
+            setfile = 'output_phrase_val_simple.txt'
+        elif args.VaiRef_version == 'standard':
             setfile = 'output_phrase_val_standard.txt'
         elif args.VaiRef_version == 'complex':
             setfile = 'output_phrase_val_complex.txt'
     if setname == 'test':
-        if args.VaiRef_version == 'standard':
+        if args.VaiRef_version == 'concept':
+            setfile = 'output_phrase_test_concept.txt'
+        elif args.VaiRef_version == 'simple':
+            setfile = 'output_phrase_test_simple.txt'
+        elif args.VaiRef_version == 'standard':
             setfile = 'output_phrase_test_standard.txt'
         elif args.VaiRef_version == 'complex':
             setfile = 'output_phrase_test_complex.txt'

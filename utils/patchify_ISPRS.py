@@ -61,9 +61,10 @@ if __name__ == '__main__':
     parser.add_argument('--patch_size', type=int, default=512, help='size of the square patches to be created in pixels per side') # 256
     parser.add_argument('--stride', type=int, default=400, help='number of pixels to move the window creating the patches') # 400
     parser.add_argument('--output_format', choices=['png', 'tif', 'jpg'], default='tif')
+    parser.add_argument('--prefix', choices=['train_', 'val_', 'test_'], required=True, default='tif')
     opt = parser.parse_args()
 
-    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix='val_')
+    make_patches(opt.in_dir, opt.out_dir, opt.patch_size, opt.stride, out_format=opt.output_format, prefix=opt.prefix)
 
 
 
@@ -124,7 +125,6 @@ if __name__ == '__main__':
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_DSMCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam/val/DSM256 --patch_size 864 --stride 432
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_masksCopy --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/masks --patch_size 864 --stride 432
 # python patchify_ISPRS.py --in_dir /home/icclab/Documents/lqw/DatasetMMF/Potsdam_Orgin/val_IRRG --out_dir /home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/images --patch_size 864 --stride 432
-
 
 
 

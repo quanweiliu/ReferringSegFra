@@ -3,17 +3,16 @@ import torch
 import torch.utils.data as data
 import numpy as np
 import cv2
+from pathlib import Path
 from PIL import Image
-from bert.tokenization_bert import BertTokenizer
-
-# import h5py
-# from refer.refer import REFER
-
-# import sys
-# sys.path.append('/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra')
 # from bert.tokenization_bert import BertTokenizer
-# from args import get_parser
-# from utils import transforms
+
+
+import sys
+sys.path.append('/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra')
+from bert.tokenization_bert import BertTokenizer
+from args import get_parser
+from utils import transforms
 
 # Dataset configuration initialization
 data_root = "/home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/"
@@ -30,7 +29,11 @@ suffix = {
 reverse_suffix = {v: k for k, v in suffix.items()}
 
 
-def build_rsris_batches(setname, args):
+def build_rsris_batches(setname, \
+                        args, \
+                        unlabeled_dir=None, \
+                        unlabeled_mask_path=None, \
+                        unlabeled_text_path=None):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
@@ -94,7 +97,61 @@ def build_rsris_batches(setname, args):
                 all_labels.append(seg)
                 all_sentences.append(sentence)
 
-    print("Dataset Loaded.")
+
+
+    if unlabeled_mask_path is not None:
+        print(f"Integrating unlabeled data from {unlabeled_mask_path} with annotation {unlabeled_text_path}...")
+        # ---- Build text lookup from annotation file ----
+        text_lookup = {}
+        with open(unlabeled_text_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split(" ")
+                fname = parts[0]          # e.g., "val_0_0.tif"
+                sentence = " ".join(parts[1:])
+                text_lookup[fname] = sentence
+
+        unlabeled_mask_path = Path(unlabeled_mask_path)
+        pseudo_count = 0
+
+        for mask_file in sorted(unlabeled_mask_path.glob("*.tif")):
+            mask_filename = mask_file.name  # e.g., "val_0_0.tif"
+
+            # (1) Look up query text from annotation file
+            query_text = text_lookup.get(mask_filename)
+            if query_text is None:
+                print(f"  [SKIP] {mask_filename}: not found in annotation file")
+                continue
+
+            # (2) Derive image filename: "val_535_0.tif" → "val_535.tif"
+            #     name_parts = ["val", "535", "0.tif"]
+            name_parts = mask_filename.split("_")
+            image_name = "_".join(name_parts[:-1])  # "val_535"
+
+            # Image lives in masks/ folder (PotsdamRef layout)
+            img_path = unlabeled_dir / "images" / f"{image_name}.tif"
+            if not img_path.exists():
+                print(f"  [SKIP] {mask_filename}: image {img_path} not found")
+                continue
+
+            # Pseudo mask IS this file itself
+            pseudo_mask_path = str(mask_file)
+
+            # self.all_imgs1.append((str(img_path), pseudo_mask_path, query_text))
+            all_imgs1.append(str(img_path))
+            all_labels.append(pseudo_mask_path)
+            all_sentences.append(query_text)
+            pseudo_count += 1
+            # print("all_imgs1", all_imgs1[-1])  # Debug: print the last sample added
+            # print("all_labels", all_labels[-1])  # Debug: print the last sample added
+            # print("all_sentences", all_sentences[-1])  # Debug: print the last sample added
+            # print("length samples", len(self.samples))  # Debug: print total number of samples after each addition
+        print(f" Added {pseudo_count} pseudo-labeled samples from {unlabeled_mask_path}")
+
+
+    print(f"Dataset Loaded with {len(all_imgs1)} samples.")
     return all_imgs1, all_labels, all_sentences
 
 class ReferDataset(data.Dataset):
@@ -103,6 +160,9 @@ class ReferDataset(data.Dataset):
                  image_transforms=None,
                  target_transforms=None,
                  split='train',
+                 unlabeled_dir: str = None,
+                 unlabeled_mask_path: str = None,
+                 unlabeled_text_path: str = None,
                  eval_mode=False):
 
         self.classes = []
@@ -110,8 +170,13 @@ class ReferDataset(data.Dataset):
         self.target_transform = target_transforms
         self.split = split
         self.max_tokens = 20
+        self.unlabeled_dir = Path(unlabeled_dir) if unlabeled_dir is not None else None
 
-        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split, args)
+        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split, \
+                                                                   args, \
+                                                                   self.unlabeled_dir, \
+                                                                   unlabeled_mask_path, \
+                                                                   unlabeled_text_path)
         self.sentences = all_sentences
         self.imgs1 = all_imgs1
         self.labels = all_labels
@@ -200,7 +265,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     transform = transforms.get_transform(args=args)
 
-    dataset = ReferDataset(args, split='train', image_transforms=transform, eval_mode=False)
+    dataset = ReferDataset(args, 
+                           split='train', 
+                           unlabeled_dir="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/",
+                           unlabeled_mask_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/unlabeled_valid/",
+                           unlabeled_text_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/output_phrase_val_concept.txt",
+                           image_transforms=transform, 
+                           eval_mode=False)
     # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
     print(len(dataset))  # 12181 / 1740  / 3481
     for i in range(100):
@@ -208,8 +279,8 @@ if __name__ == "__main__":
 
         # train [3, 480, 480] [480, 480] [1, 20] [1, 20]
         # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
-        print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
-        break
+        # print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
+        # break
 
 
 

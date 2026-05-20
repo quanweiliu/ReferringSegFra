@@ -172,11 +172,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # args.dataset = 'VaiRef' # or rrsisd / RefSegRS / VaiRef
 
+    # # other version
     # args.model = 'rrsis_one'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0406-1231-rrsis_one'
-    args.model = 'rmsin'
-    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0422-1054-rmsin'
+    # args.model = 'rmsin'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0422-1054-rmsin'
     # args.model = 'lavt_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0418-2304-lavt_one' 
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRs_0407-1109-lavt_one"
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1026-lavt_one'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0421-2353-lavt_one'
@@ -186,32 +188,62 @@ if __name__ == "__main__":
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RefSegRS_0417-1323-rrsis'
 
 
-    # args.model = 'rrsis_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0421-0851-lavt_one'
-    # args.model = 'rmsin'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0324-1831-rmsin'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0420-1257-rmsin'
-    # args.model = 'lavt_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0326-0951-lavt_one'
+    # # complex version
+    args.model = 'lavt'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0417-2155-lavt'
+    args.model = 'lavt_one'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0418-2304-lavt_one'
+    args.model = 'rmsin'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0418-1503-rmsin'
+    args.model = 'rrsis'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0418-1046-rrsis'
+    args.model = 'rrsis_one'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_complex/VaiRef_0418-2354-rrsis_one'
+
+
+    # # standard version
     # args.model = 'lavt'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_LAVT'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0417-1842-lavt' 
+    # args.model = 'lavt_one'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0419-0945-lavt_one'
+    # args.model = 'rmsin'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0417-2316-rmsin'
+    # # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0503-1457-rmsin'
     # args.model = 'rrsis'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/rrsisd_0419-1726-rrsis'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0419-0943-rrsis'
     # args.model = 'rrsis_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/RRSISD_0413-2304-rrsis_one'
-    # args.model = 'lavt'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2155-lavt'
+    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0418-1402-rrsis_one'
 
 
+    # simple version
     # args.model = 'lavt'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-1842-lavt' 
-    # args.model = 'lavt_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-2304-lavt_one' 
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0419-0945-lavt_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0501-1658-lavt"
+    args.model = 'lavt_one'
+    model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0427-2315-lavt_one"
     # args.model = 'rmsin'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0417-2316-rmsin'
+    ############## model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0427-1553-rmsin"
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0502-2219-rmsin"
+    # args.model = 'rrsis'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0428-1421-rrsis"
     # args.model = 'rrsis_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0418-1402-rrsis_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_simple/VaiRef_0429-1102-rrsis_one"
+
+
+    # concept version
+    # args.model = 'rmsin'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0505-0900-rmsin"
+    # args.model = 'lavt_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0505-1623-lavt_one"
+    # args.model = 'rrsis_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_concept/VaiRef_0506-0029-rrsis_one"
+
+    # ss version
+    # args.model = 'rmsin'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0519-0040-rmsin"
+    # args.model = 'lavt_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0519-2159-lavt_one"
+    # args.model = 'rrsis_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0517-2220-rrsis_one"
 
 
     # args.output_dir = os.path.split(model_path)[0]
@@ -219,10 +251,11 @@ if __name__ == "__main__":
         arguments = json.load(f)
     args = Namespace(**arguments)
     args.resume = os.path.join(model_path, 'model_best_' + args.model + '.pth')
-    args.VaiRef_version = 'complex' # standard or complex
+    args.VaiRef_version = 'standard' # simple, standard or complex, "concept"
     # args.dataset = 'VaiRef'
-    # args.dataset = 'PotsRef'
+    args.dataset = 'PotsRef'
     args.split = 'test'
+    # args.split = 'val'
     # logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') 输出模式
     logging.basicConfig(level=logging.INFO, \
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", \
