@@ -1,15 +1,12 @@
 import os
 import torch
 import torch.utils.data as data
-from torchvision import transforms
-from torch.autograd import Variable
 import numpy as np
 import cv2
+from pathlib import Path
 from PIL import Image
 from bert.tokenization_bert import BertTokenizer
 
-# import h5py
-# from refer.refer import REFER
 
 # import sys
 # sys.path.append('/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra')
@@ -18,7 +15,7 @@ from bert.tokenization_bert import BertTokenizer
 # from utils import transforms
 
 # Dataset configuration initialization
-data_root = "/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/"
+data_root = "/home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/"
 
 
 suffix = {
@@ -32,72 +29,63 @@ suffix = {
 reverse_suffix = {v: k for k, v in suffix.items()}
 
 
-def build_rsris_batches(setname, args):
+def build_rsris_batches(setname, \
+                        args):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
-        if args.VaiRef_version == 'concept':
-            setfile = 'output_phrase_train_concept.txt'
-        elif args.VaiRef_version == 'simple':
-            setfile = 'output_phrase_train_simple.txt'
-        elif args.VaiRef_version == 'standard':
-            setfile = 'output_phrase_train_standard.txt'
-        elif args.VaiRef_version == 'complex': 
-            setfile = 'output_phrase_train_complex.txt'
-    if setname == 'val':
-        if args.VaiRef_version == 'concept':
-            setfile = 'output_phrase_val_concept.txt'
-        elif args.VaiRef_version == 'simple':
-            setfile = 'output_phrase_val_simple.txt'
-        elif args.VaiRef_version == 'standard':
-            setfile = 'output_phrase_val_standard.txt'
-        elif args.VaiRef_version == 'complex':
-            setfile = 'output_phrase_val_complex.txt'
-    if setname == 'test':
-        if args.VaiRef_version == 'concept':
-            setfile = 'output_phrase_test_concept.txt'
-        elif args.VaiRef_version == 'simple':
-            setfile = 'output_phrase_test_simple.txt'
-        elif args.VaiRef_version == 'standard':
-            # setfile = 'output_phrase_test_standard.txt'
-            setfile = 'output_phrase_test_standard_visulization.txt'
-        elif args.VaiRef_version == 'complex':
-            setfile = 'output_phrase_test_complex.txt'
+        set_prefix = 'train'
+    elif setname == 'val':
+        set_prefix = 'val'
+    elif setname == 'test':
+        set_prefix = 'test'
 
+    versions = ['simple', 'standard', 'complex']
 
-    tf = f'{data_root}/' + setfile
-    all_imgs1 = []
-    all_labels = []
-    all_sentences = []
+    # load all four versions, aligned by mask filename
+    version_sentences = {}  # mask_name -> [sent_concept, sent_simple, sent_standard, sent_complex]
+    image_map = {}          # mask_name -> (image_path, mask_path)
 
-    with open(tf, 'r') as rf:
-        rlines = rf.readlines()
-        for idx, line in enumerate(rlines):
-            lsplit = line.split(' ')
-            image_split = lsplit[0].split('_')
-            image_name = image_split[0] + '_' + image_split[1]
-            seg_label_name = reverse_suffix.get(image_split[2].split('.')[0])
-            # print("image_split", lsplit[0],
-            #       "image_name", image_name, 
-            #       "seg_label_name", seg_label_name)
+    for vi, version in enumerate(versions):
+        setfile = f'output_phrase_{set_prefix}_{version}.txt'
+        tf = os.path.join(data_root, setfile)
 
-            # print("lsplit", lsplit)
-            if True:
+        with open(tf, 'r') as rf:
+            for idx, line in enumerate(rf.readlines()):
+                lsplit = line.split(' ')
+                mask_name = lsplit[0]
+                image_split = mask_name.split('_')
+                image_name = image_split[0] + '_' + image_split[1]
+                seg_label_name = reverse_suffix.get(image_split[2].split('.')[0])
+                # print("image_split", lsplit[0],
+                #       "image_name", image_name, 
+                #       "seg_label_name", seg_label_name)
+
+                # print("lsplit", lsplit)
                 im_name1 = os.path.join(im_dir1, image_name + '.tif')
-                seg = os.path.join(seg_label_dir, seg_label_name,  lsplit[0])
+                seg = os.path.join(seg_label_dir, seg_label_name, mask_name)
                 # print("im_name1", im_name1)
                 # print("seg", seg)
                 del(lsplit[0])
-                sentence = ' '.join(lsplit)
-                
-                # sent = sentence
-                # im_1 = im_name1
-                # label_mask = seg
-                all_imgs1.append(im_name1)
-                all_labels.append(seg)
-                all_sentences.append(sentence)
+                sentence = ' '.join(lsplit).strip()
 
-    print("Dataset Loaded.")
+                if mask_name not in version_sentences:
+                    version_sentences[mask_name] = [''] * len(versions)
+                    image_map[mask_name] = (im_name1, seg)
+
+                version_sentences[mask_name][vi] = sentence
+
+    all_imgs1 = []
+    all_labels = []
+    all_sentences = []  # each element: [concept, simple, standard, complex]
+
+    for mask_name in sorted(image_map.keys()):
+        img_path, mask_path = image_map[mask_name]
+        all_imgs1.append(img_path)
+        all_labels.append(mask_path)
+        all_sentences.append(version_sentences[mask_name])
+
+    print(f"Dataset Loaded: {len(all_imgs1)} samples, each with {len(versions)} text versions.")
     return all_imgs1, all_labels, all_sentences
 
 class ReferDataset(data.Dataset):
@@ -127,7 +115,7 @@ class ReferDataset(data.Dataset):
         # if we are testing on a dataset, test all sentences of an object;
         # o/w, we are validating during training, randomly sample one sentence for efficiency
         for r in range(len(self.imgs1)):
-            img_sentences = [self.sentences[r]]
+            img_sentences = self.sentences[r]
             sentences_for_ref = []
             attentions_for_ref = []
 
@@ -203,7 +191,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     transform = transforms.get_transform(args=args)
 
-    dataset = ReferDataset(args, split='train', image_transforms=transform, eval_mode=False)
+    dataset = ReferDataset(args, 
+                           split='train', 
+                           image_transforms=transform, 
+                           eval_mode=False)
     # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
     print(len(dataset))  # 12181 / 1740  / 3481
     for i in range(100):
@@ -212,6 +203,7 @@ if __name__ == "__main__":
         # train [3, 480, 480] [480, 480] [1, 20] [1, 20]
         # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
         print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
+        break
 
 
 

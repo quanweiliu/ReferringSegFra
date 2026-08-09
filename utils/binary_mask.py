@@ -77,8 +77,8 @@ def extract_binary_masks(mask_dir, output_root):
             # 统计像素点，如果该类像素占比超过 0.1%，则保存并记录
             if np.count_nonzero(binary_mask) > (img_h * img_w * 0.001):
                 count_index += 1
-                sub_save_path = os.path.join(root_save_path, cls_name, output_filename)
-                cv2.imwrite(sub_save_path, binary_mask)
+                # sub_save_path = os.path.join(root_save_path, cls_name, output_filename)
+                # cv2.imwrite(sub_save_path, binary_mask)
                 present_classes.append(cls_name)
         
         metadata[filename] = present_classes
@@ -598,3 +598,7 @@ prepare_gemini_inputs('/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/enriched
 
 
 # 特殊关注的 mask： val_95 / val_212  / val_364
+# output json files: 
+# patch_metadata.json
+# enriched_metadata.json
+# gemini_batch_input.json

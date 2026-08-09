@@ -3,11 +3,10 @@ import torch
 import torch.utils.data as data
 import numpy as np
 import cv2
+from pathlib import Path
 from PIL import Image
 from bert.tokenization_bert import BertTokenizer
 
-# import h5py
-# from refer.refer import REFER
 
 # import sys
 # sys.path.append('/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra')
@@ -17,6 +16,7 @@ from bert.tokenization_bert import BertTokenizer
 
 # Dataset configuration initialization
 data_root = "/home/icclab/Documents/lqw/DatasetMMF/VaihingenRef/"
+# data_root = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/assets/"
 
 
 suffix = {
@@ -30,7 +30,8 @@ suffix = {
 reverse_suffix = {v: k for k, v in suffix.items()}
 
 
-def build_rsris_batches(setname, args):
+def build_rsris_batches(setname, \
+                        args):
     im_dir1 = f'{data_root}/images/'
     seg_label_dir = f'{data_root}/binary_masks/'
     if setname == 'train':
@@ -44,7 +45,7 @@ def build_rsris_batches(setname, args):
             setfile = 'output_phrase_train_complex.txt'
     if setname == 'val':
         if args.VaiRef_version == 'concept':
-            setfile = 'output_phrase_train_concept.txt'
+            setfile = 'output_phrase_val_concept.txt'
         if args.VaiRef_version == 'simple':
             setfile = 'output_phrase_val_simple.txt'
         elif args.VaiRef_version == 'standard':
@@ -58,6 +59,7 @@ def build_rsris_batches(setname, args):
             setfile = 'output_phrase_test_simple.txt'
         elif args.VaiRef_version == 'standard':
             setfile = 'output_phrase_test_standard.txt'
+            # setfile = 'output_phrase_test_standard_visulization.txt'
         elif args.VaiRef_version == 'complex':
             setfile = 'output_phrase_test_complex.txt'
 
@@ -71,7 +73,8 @@ def build_rsris_batches(setname, args):
         rlines = rf.readlines()
         for idx, line in enumerate(rlines):
             lsplit = line.split(' ')
-            image_split = lsplit[0].split('_')
+            mask_name = lsplit[0]
+            image_split = mask_name.split('_')
             image_name = image_split[0] + '_' + image_split[1]
             seg_label_name = reverse_suffix.get(image_split[2].split('.')[0])
             # print("image_split", lsplit[0],
@@ -79,22 +82,18 @@ def build_rsris_batches(setname, args):
             #       "seg_label_name", seg_label_name)
 
             # print("lsplit", lsplit)
-            if True:
-                im_name1 = os.path.join(im_dir1, image_name + '.tif')
-                seg = os.path.join(seg_label_dir, seg_label_name,  lsplit[0])
-                # print("im_name1", im_name1)
-                # print("seg", seg)
-                del(lsplit[0])
-                sentence = ' '.join(lsplit)
-                
-                # sent = sentence
-                # im_1 = im_name1
-                # label_mask = seg
-                all_imgs1.append(im_name1)
-                all_labels.append(seg)
-                all_sentences.append(sentence)
+            im_name1 = os.path.join(im_dir1, image_name + '.tif')
+            seg = os.path.join(seg_label_dir, seg_label_name, mask_name)
+            # print("im_name1", im_name1)
+            # print("seg", seg)
+            del(lsplit[0])
+            sentence = ' '.join(lsplit)
+            all_imgs1.append(im_name1)
+            all_labels.append(seg)
+            all_sentences.append(sentence)
 
     print("Dataset Loaded.")
+    print(f"Dataset Loaded: {len(all_imgs1)} samples.")
     return all_imgs1, all_labels, all_sentences
 
 class ReferDataset(data.Dataset):
@@ -111,7 +110,8 @@ class ReferDataset(data.Dataset):
         self.split = split
         self.max_tokens = 20
 
-        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split, args)
+        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split, \
+                                                                   args)
         self.sentences = all_sentences
         self.imgs1 = all_imgs1
         self.labels = all_labels
@@ -200,7 +200,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     transform = transforms.get_transform(args=args)
 
-    dataset = ReferDataset(args, split='train', image_transforms=transform, eval_mode=False)
+    dataset = ReferDataset(args, 
+                           split='test', 
+                           image_transforms=transform, 
+                           eval_mode=False)
     # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
     print(len(dataset))  # 12181 / 1740  / 3481
     for i in range(100):
@@ -210,6 +213,4 @@ if __name__ == "__main__":
         # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
         print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
         break
-
-
 

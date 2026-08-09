@@ -6,17 +6,17 @@ def get_parser():
     parser = argparse.ArgumentParser(description='referring expression segmentation training and testing')
     parser.add_argument('--amsgrad', action='store_true',
                         help='if true, set amsgrad to True in an Adam or AdamW optimizer.')
-    parser.add_argument('-b', '--batch-size', default=4, type=int)
+    parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--bert_tokenizer', default='bert-base-uncased', help='BERT tokenizer')
     parser.add_argument('--dataset', default='VaiRef', help='refcoco, refcoco+, refcocog, rrsisd, RefSegRS, or VaiRef')
-    parser.add_argument('--VaiRef_version', default='concept', help='concept, simple, standard or complex version of the VaiRef dataset')
+    parser.add_argument('--VaiRef_version', default='standard', help='mix, concept, simple, standard or complex version of the VaiRef dataset')
     parser.add_argument('--ddp_trained_weights', action='store_true',
                         help='Only needs specified when testing,'
                              'whether the weights to be loaded are from a DDP-trained model')
     # parser.add_argument('--device', default='cuda:0', help='device')  # only used when testing on a single machine
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 
-    parser.add_argument('--epochs', default=40, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('--epochs', default=20, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--fusion_drop', default=0.0, type=float, help='dropout rate for PWAMs')
     parser.add_argument('--img_size', default=480, type=int, help='input image size')
     parser.add_argument("--local-rank", type=int,default=0,help='local rank for DistributedDataParallel')
@@ -24,7 +24,7 @@ def get_parser():
     parser.add_argument('--mha', default='', help='If specified, should be in the format of a-b-c-d, e.g., 4-4-4-4,'
                                                   'where a, b, c, and d refer to the numbers of heads in stage-1,'
                                                   'stage-2, stage-3, and stage-4 PWAMs')
-    parser.add_argument('--model', default='lavt_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis', 'rrsis_one'], \
+    parser.add_argument('--model', default='rrsis_one', choices=['lavt', 'lavt_one', 'rmsin', 'rrsis', 'rrsis_one'], \
                         help='model to train or test')
     parser.add_argument('--pin_mem', action='store_true',
                         help='If true, pin memory when using the data loader.')
@@ -51,6 +51,8 @@ def get_parser():
     #                     help='resume from checkpoint')
     parser.add_argument('--resume', default='', \
                         help='resume from checkpoint')
+    parser.add_argument('--do-label', action='store_true', help='Generate and save pseudo labels instead of evaluating')
+    parser.add_argument('--pseudo-dir', default='', help='Directory to save pseudo label images')
     parser.add_argument('--refer_data_root', default='', help='REFER dataset root directory')
     # parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RRSISD/', help='REFER dataset root directory')
     # parser.add_argument('--refer_data_root', default='/home/icclab/Documents/lqw/DatasetMMF/RefSegRS/', help='REFER dataset root directory')

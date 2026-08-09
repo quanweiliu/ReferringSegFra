@@ -37,11 +37,11 @@ def get_dataset(image_set, transform, args):
         from dataset.ISPRS_VaiRef import ReferDataset
     elif args.dataset == 'PotsRef':
         from dataset.ISPRS_PotsRef import ReferDataset
-    ds = ReferDataset(args,
-                      split=image_set,
-                      image_transforms=transform,
-                      target_transforms=None
-                      )
+    ds = ReferDataset(args, 
+                    split=image_set, 
+                    image_transforms=transform, 
+                    target_transforms=None
+                    )
     num_classes = 2
 
     return ds, num_classes
@@ -120,13 +120,18 @@ def main(args):
 
     # data loader
     data_loader = data.DataLoader(
-                        dataset, batch_size=args.batch_size,
-                        sampler=train_sampler, num_workers=args.workers, 
-                        pin_memory=args.pin_mem, drop_last=True)
+                                dataset, 
+                                batch_size=args.batch_size,
+                                sampler=train_sampler, 
+                                num_workers=args.workers, 
+                                pin_memory=args.pin_mem, 
+                                drop_last=True)
 
     data_loader_test = data.DataLoader(
-                        dataset_test, batch_size=1, 
-                        sampler=test_sampler, num_workers=args.workers)
+                        dataset_test, 
+                        batch_size=1, 
+                        sampler=test_sampler, 
+                        num_workers=args.workers)
 
     # model initialization
     # print(args.model)
@@ -167,6 +172,18 @@ def main(args):
     else:
         bert_model = None
         pure_bert_model = None
+
+    # 统计参数量
+    # total_params = sum(p.numel() for p in pure_model.parameters())
+    # trainable_params = sum(p.numel() for p in pure_model.parameters() if p.requires_grad)
+    # print(f"[Model] Total parameters: {total_params / 1e6:.2f}M")
+    # print(f"[Model] Trainable parameters: {trainable_params / 1e6:.2f}M")
+    # print(f"[Model] Non-trainable parameters: {(total_params - trainable_params) / 1e6:.2f}M")
+    # if pure_bert_model is not None:
+    #     bert_total = sum(p.numel() for p in pure_bert_model.parameters())
+    #     bert_trainable = sum(p.numel() for p in pure_bert_model.parameters() if p.requires_grad)
+    #     print(f"[BERT] Total parameters: {bert_total / 1e6:.2f}M")
+    #     print(f"[BERT] Trainable parameters: {bert_trainable / 1e6:.2f}M")
 
     # resume training
     if args.resume:

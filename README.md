@@ -24,6 +24,7 @@ We used Transformers v3.0.2 during development but it had a bug that would appea
 * `./args.py` defines all of the hyper-parameters in the framework.
 * `./train.py` is invoked to train the model on multiple GPU.
 * `./test.py` is invoked to run inference on the evaluation subsets after training.
+* `./test_label.py` is invoked to labeling on the evaluation subsets after training.
 * ` visulization_infer.py` is the result visulization tool.
 * `./refer` contains data pre-processing code and is also where data should be placed, including the images and all annotations.
 It is cloned from [refer](https://github.com/lichengunc/refer). 

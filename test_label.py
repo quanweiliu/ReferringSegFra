@@ -110,12 +110,103 @@ def evaluate(model, data_loader, bert_model, logger, args):
     logger.info(results_str)
 
 
+def labelling(model, dataset, bert_model, output_dir, args):
+    """
+    Generate pseudo masks from Referring Segmentation model for self-training.
+
+    For each sample, runs model inference, upsamples the predicted mask
+    to the original image resolution, and saves as PNG.
+
+    Args:
+        model: Referring segmentation model
+        dataset: Dataset instance (must have imgs1 and labels attributes)
+        bert_model: BERT model for text encoding (can be None)
+        output_dir: Directory to save pseudo mask PNGs
+        args: Arguments (needs device)
+    """
+    model.eval()
+    os.makedirs(output_dir, exist_ok=True)
+
+    data_loader = data.DataLoader(
+        dataset, batch_size=1, shuffle=False,
+        sampler=data.SequentialSampler(dataset),
+        num_workers=args.workers
+    )
+
+    save_count = 0
+    skip_count = 0
+    has_imgs_attr = hasattr(dataset, 'imgs1')
+    has_labels_attr = hasattr(dataset, 'labels')
+
+    with torch.no_grad():
+        for batch_idx, batch_data in enumerate(tqdm(data_loader, desc="Generating pseudo masks")):
+            image, target, sentences, attentions = batch_data
+            image = image.to(args.device)
+            sentences = sentences.to(args.device)
+            attentions = attentions.to(args.device)
+            sentences = sentences.squeeze(1)
+            attentions = attentions.squeeze(1)
+
+            for j in range(sentences.size(-1)):
+                if bert_model is not None:
+                    last_hidden_states = bert_model(sentences[:, :, j],
+                                                    attention_mask=attentions[:, :, j])[0]
+                    embedding = last_hidden_states.permute(0, 2, 1)
+                    output = model(image, embedding, l_mask=attentions[:, :, j].unsqueeze(-1))
+                else:
+                    output = model(image, sentences[:, :, j], l_mask=attentions[:, :, j])
+
+                output_mask = output.cpu().argmax(1).data.numpy()  # [1, H, W]
+                # print("output_mask shape:", output_mask.shape)
+
+                # # Skip samples where the predicted mask is all zeros
+                # if output_mask.sum() == 0:
+                #     skip_count += 1
+                #     print(f"Skipping image {skip_count} with no valid predictions.")
+                #     continue
+
+                # Get original image size by opening the original image
+                if has_imgs_attr:
+                    img_path = dataset.imgs1[batch_idx]
+                    with PILImage.open(img_path) as orig_img:
+                        orig_w, orig_h = orig_img.size
+                else:
+                    orig_h, orig_w = output_mask.shape[1], output_mask.shape[2]
+
+                # Upsample mask to original resolution
+                mask_tensor = torch.from_numpy(output_mask[0]).float().unsqueeze(0).unsqueeze(0)
+                mask_upsampled = torch.nn.functional.interpolate(
+                    mask_tensor,
+                    size=(orig_h, orig_w),
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze()
+                pseudo_mask = (mask_upsampled > 0.5).cpu().numpy().astype(np.uint8) * 255
+
+                # Resolve output filename from mask path
+                if has_labels_attr:
+                    mask_path = dataset.labels[batch_idx]
+                    # filename = Path(mask_path).stem + '.tif'
+                    filename = Path(mask_path).stem + '.png'
+                else:
+                    # filename = f"{batch_idx:06d}.tif"
+                    filename = f"{batch_idx:06d}.png"
+
+                cv2.imwrite(os.path.join(output_dir, filename), pseudo_mask)
+                save_count += 1
+
+            del image, target, sentences, attentions, output
+
+    print(f"\nPseudo masks saved to {output_dir}/")
+    print(f"  Total saved: {save_count}, skipped (all-zero): {skip_count}")
+
+
 def main(args):
     # device = torch.device(args.device)
     dataset_test, _ = get_dataset(
-                                  args.split, 
+                                  args.split,
                                 #   'val',
-                                  transforms.get_transform(args=args), 
+                                  transforms.get_transform(args=args),
                                   args)
 
     test_sampler = data.SequentialSampler(dataset_test)
@@ -167,8 +258,12 @@ def main(args):
         bert_model = None
 
     args.print_freq = 1000
-    evaluate(model, data_loader_test, bert_model, 
-             logger=logging.getLogger("test"), args=args)
+
+    if getattr(args, 'do_label', False):
+        labelling(model, dataset_test, bert_model, args.pseudo_dir, args)
+    else:
+        evaluate(model, data_loader_test, bert_model,
+                 logger=logging.getLogger("test"), args=args)
 
 
 if __name__ == "__main__":
@@ -208,15 +303,15 @@ if __name__ == "__main__":
     # # standard version
     # args.model = 'lavt'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0417-1842-lavt' 
-    # args.model = 'lavt_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0419-0945-lavt_one'
+    args.model = 'lavt_one'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0419-0945-lavt_one'
     # args.model = 'rmsin'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0417-2316-rmsin'
     # # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0503-1457-rmsin'
     # args.model = 'rrsis'
     # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0419-0943-rrsis'
-    # args.model = 'rrsis_one'
-    # model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0418-1402-rrsis_one'
+    args.model = 'rrsis_one'
+    model_path = '/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0418-1402-rrsis_one'
 
 
     # simple version
@@ -236,20 +331,17 @@ if __name__ == "__main__":
 
     # concept version
     # args.model = 'rmsin'
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0505-0900-rmsin"
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_concept/VaiRef_0505-0900-rmsin"
     # args.model = 'lavt_one'
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0505-1623-lavt_one"
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_concept/VaiRef_0505-1623-lavt_one"
     # args.model = 'rrsis_one'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_concept/VaiRef_0506-0029-rrsis_one"
 
     # ss concept version
     # args.model = 'rmsin'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0519-0040-rmsin"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0526-1218-rmsin"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0526-2208-rmsinf"
     # args.model = 'lavt_one'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0519-2159-lavt_one"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0528-1248-lavt_one"
     # args.model = 'rrsis_one'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0517-2220-rrsis_one"
 
@@ -257,34 +349,28 @@ if __name__ == "__main__":
     # ss standard version
     # args.model = 'rmsin'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0522-2319-rmsin"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0529-0940-rmsin"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0529-1320-rmsinf"
-    args.model = 'lavt_one'
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints_standard/VaiRef_0524-0003-lavt_one"
-    model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0530-1117-lavt_onef"
+    # args.model = 'lavt_one'
+    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0524-0003-lavt_one"
     # args.model = 'rrsis_one'
     # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0523-1320-rrsis_one"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0528-1807-rrsis_one"
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0529-1717-rrsis_onef"
 
 
-
-    # mix
-    args.model = 'rrsis_one'
-    model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0530-0021-rrsis_one_mix"
-    # args.model = 'lavt_one'
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0602-1029-lavt_one_mix"
-    # args.model = 'rmsin'
-    # model_path = "/home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/checkpoints/VaiRef_0603-1041-rmsin_mix"
+    # Save labelling-related args before JSON overwrites them
+    _do_label = getattr(args, 'do_label', False)
+    _pseudo_dir = getattr(args, 'pseudo_dir', '')
 
     # args.output_dir = os.path.split(model_path)[0]
     with open(os.path.join(model_path, 'args.json'), 'r') as f:
         arguments = json.load(f)
     args = Namespace(**arguments)
     args.resume = os.path.join(model_path, 'model_best_' + args.model + '.pth')
-    args.VaiRef_version = 'simple' # simple, standard or complex, concept
-    # args.dataset = 'VaiRef'
-    args.dataset = 'PotsRef'
+
+    # Restore labelling-related args
+    args.do_label = _do_label
+    args.pseudo_dir = _pseudo_dir
+    args.VaiRef_version = 'standard' # simple, standard or complex, concept
+    args.dataset = 'VaiRef'
+    # args.dataset = 'PotsRef'
     args.split = 'test'
     # args.split = 'val'
     # logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s') 输出模式
@@ -304,4 +390,8 @@ if __name__ == "__main__":
     main(args)
 
 
-# python test.py 
+# 评估模式（原有功能，默认行为）
+# python test_label.py
+
+# 伪标签生成模式
+# python test_label.py --do-label --pseudo-dir /home/icclab/Documents/lqw/Referring_Segmentation/ReferringSegFra/assets/rrsis_one

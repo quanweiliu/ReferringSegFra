@@ -47,7 +47,7 @@ def build_rsris_batches(setname, \
             setfile = 'output_phrase_train_complex.txt'
     if setname == 'val':
         if args.VaiRef_version == 'concept':
-            setfile = 'output_phrase_train_concept.txt'
+            setfile = 'output_phrase_val_concept.txt'
         if args.VaiRef_version == 'simple':
             setfile = 'output_phrase_val_simple.txt'
         elif args.VaiRef_version == 'standard':
@@ -82,24 +82,19 @@ def build_rsris_batches(setname, \
             #       "seg_label_name", seg_label_name)
 
             # print("lsplit", lsplit)
-            if True:
-                im_name1 = os.path.join(im_dir1, image_name + '.tif')
-                seg = os.path.join(seg_label_dir, seg_label_name,  lsplit[0])
-                # print("im_name1", im_name1)
-                # print("seg", seg)
-                del(lsplit[0])
-                sentence = ' '.join(lsplit)
-                
-                # sent = sentence
-                # im_1 = im_name1
-                # label_mask = seg
-                all_imgs1.append(im_name1)
-                all_labels.append(seg)
-                all_sentences.append(sentence)
+            im_name1 = os.path.join(im_dir1, image_name + '.tif')
+            seg = os.path.join(seg_label_dir, seg_label_name,  lsplit[0])
+            # print("im_name1", im_name1)
+            # print("seg", seg)
+            del(lsplit[0])
+            sentence = ' '.join(lsplit)
+            all_imgs1.append(im_name1)
+            all_labels.append(seg)
+            all_sentences.append(sentence)
 
 
 
-    if unlabeled_mask_path is not None:
+    if unlabeled_mask_path is not None and setname == 'train':
         print(f"Integrating unlabeled data from {unlabeled_mask_path} with annotation {unlabeled_text_path}...")
         # ---- Build text lookup from annotation file ----
         text_lookup = {}
@@ -282,5 +277,17 @@ if __name__ == "__main__":
         # print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
         # break
 
+    dataset = ReferDataset(args, 
+                           split='test', 
+                           image_transforms=transform, 
+                           eval_mode=False)
+    # dataset = ReferDataset(args, split='test', image_transforms=transform, eval_mode=True)
+    print(len(dataset))  # 12181 / 1740  / 3481
+    for i in range(100):
+        img, target, tensor_embeddings, attention_mask = dataset[i]
 
+        # train [3, 480, 480] [480, 480] [1, 20] [1, 20]
+        # test [3, 480, 480] [480, 480] [1, 20, 1] [1, 20, 1]
+        print(img.shape, target.shape, tensor_embeddings.shape, attention_mask.shape)
+        break
 

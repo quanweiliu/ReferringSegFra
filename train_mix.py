@@ -34,24 +34,14 @@ def get_dataset(image_set, transform, args):
     elif args.dataset == 'RefSegRS':
         from dataset.RefSegRS_refer_bert import ReferDataset
     elif args.dataset == 'VaiRef':
-        from dataset.ISPRS_VaiRef_ss import ReferDataset
+        from dataset.ISPRS_VaiRef_mix import ReferDataset
     elif args.dataset == 'PotsRef':
         from dataset.ISPRS_PotsRef import ReferDataset
-    # ds = ReferDataset(args,
-    #                   split=image_set,
-    #                   image_transforms=transform,
-    #                   target_transforms=None
-    #                   )
-
     ds = ReferDataset(args, 
                     split=image_set, 
-                    unlabeled_dir="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/",
-                    # unlabeled_mask_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/unlabeled_valid_concept_lavt_one/",
-                    # unlabeled_text_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/output_phrase_val_concept.txt",
-                    unlabeled_mask_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/unlabeled_valid_standard_lavt_onef/",
-                    unlabeled_text_path="/home/icclab/Documents/lqw/DatasetMMF/PotsdamRef/output_phrase_val_standard.txt",
                     image_transforms=transform, 
-                    target_transforms=None)
+                    target_transforms=None
+                    )
     num_classes = 2
 
     return ds, num_classes
@@ -309,7 +299,7 @@ if __name__ == "__main__":
         wandb.init(project=args.model)
 
     # create rundir and copy args file
-    run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model + "f"
+    run_id = datetime.datetime.now().strftime("%m%d-%H%M-") + args.model + "_" + "mix"
     args.output_dir = os.path.join(args.output_dir, args.dataset + "_" + str(run_id))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -340,5 +330,5 @@ if __name__ == "__main__":
     main(args)
 
 
-# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train_ss.py --img_size 480
-# CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node 1 --master_port 12345 train_ss.py --img_size 480 
+# CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node 2 --master_port 12345 train_mix.py --img_size 480 
+# CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node 1 --master_port 12345 train_mix.py --img_size 480 
